@@ -7,6 +7,9 @@ class CNN():
     def __init__(self) -> None:
         pass
 
+    def loss():
+        pass
+
 
 # deep residual network class (ResNet)
 class ResNet():

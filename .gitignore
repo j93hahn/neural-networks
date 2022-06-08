@@ -3,15 +3,18 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Personal Ignores
+*.pkl
+*.pdf
+hw5
+.DS_Store
+
 # User-specific files
 *.rsuser
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
-*.pkl
-*.pdf
-.DS_Store
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

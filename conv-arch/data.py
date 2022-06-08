@@ -5,7 +5,7 @@ class DataLoader():
     def __init__(self) -> None:
         with open("mnist.pkl",'rb') as f:
             mnist = pickle.load(f)
-        self.x_train = mnist["training_images"].reshape(60000, 28, 28)
-        self.t_train = mnist["training_labels"]
-        self.x_test = mnist["test_images"].reshape(10000, 28, 28)
-        self.t_test = mnist["test_labels"]
+        self.train_images = mnist["training_images"]
+        self.train_labels = mnist["training_labels"]
+        self.test_images = mnist["test_images"]
+        self.test_labels = mnist["test_labels"]

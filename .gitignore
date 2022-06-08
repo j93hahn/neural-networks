@@ -10,6 +10,7 @@
 *.userosscache
 *.sln.docstates
 *.pkl
+*.pdf
 .DS_Store
 
 # User-specific files (MonoDevelop/Xamarin Studio)

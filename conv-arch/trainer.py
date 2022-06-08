@@ -1,4 +1,4 @@
-from data import DataLoader
+from loader import DataLoader
 from model import CNN, ResNet
 import numpy as np
 import matplotlib.pyplot as plt

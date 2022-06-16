@@ -73,7 +73,7 @@ class Sequential(BaseLayer):
         self._output = self._inputs[-1]
         return self._output
 
-    def backward(self, input):
+    def backward(self):
         ...
 
     def parameters(self):
@@ -106,6 +106,7 @@ class ReLU(BaseLayer):
         return self._output
 
     def backward(self):
+        # derivative is just _input > 0
         pass
 
     def parameters(self):
@@ -126,6 +127,7 @@ class Sigmoid(BaseLayer):
         return self._output
 
     def backward(self):
+        # not sure what derivative is
         pass
 
     def parameters(self):
@@ -146,6 +148,7 @@ class SoftMax(BaseLayer):
         return np.argmax(self._output)
 
     def backward(self):
+        # not sure what derivative is
         pass
 
     def parameters(self):

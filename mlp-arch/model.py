@@ -167,3 +167,7 @@ model.add(SoftMax())
 model.forward(np.random.randn(49, 16).reshape(784, 1)) # works properly
 #model.backward() # does not work properly
 set_trace()
+
+
+def cost(x, y):
+    return np.sum(np.square(x - y))

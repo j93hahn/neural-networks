@@ -1,4 +1,5 @@
 import numpy as np
+from pudb import set_trace
 
 
 ########################
@@ -73,7 +74,7 @@ class Sequential(BaseLayer):
         return self._output
 
     def backward(self, input):
-        pass
+        ...
 
     def parameters(self):
         return
@@ -162,6 +163,7 @@ model.add(ReLU())
 model.add(FullyConnectedLayer(16, 10))
 model.add(SoftMax())
 
-model.forward(np.random.randn(28, 28).reshape(784, 1)) # works properly
-model.backward() # does not work properly
-x = np.array([3, 4])
+
+model.forward(np.random.randn(49, 16).reshape(784, 1)) # works properly
+#model.backward() # does not work properly
+set_trace()

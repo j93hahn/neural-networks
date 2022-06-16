@@ -1,38 +1,58 @@
 import numpy as np
 
-"""
-Steps for building a neural network model:
-1. https://www.youtube.com/watch?v=aircAruvnKk&list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi
-2. SGD: https://www.youtube.com/watch?v=k3AiUhwHQ28
-"""
 
-class Layer():
-    def __init__(self, input_dim, output_dim, input=False, output=False) -> None:
-        # He initialization - optimized for ReLU activation
-        if not input:
-            self.weights = np.random.randn(output_dim, input_dim) * np.sqrt(2/input_dim)
-            self.biases = np.zeros((output_dim, 1))
+########################
+#  LAYER CONSTRUCTION  #
+########################
 
-    def ReLU(self, a):
-        return np.maximum(0, a) # broadcasting 0 to input dimensionality
 
-    # return the layer's output for the given input a
-    def forward(self, a):
-        result = self.ReLU(np.dot(self.weights, a) + self.biases)
-        return result
+class BaseLayer():
+    def __init__(self) -> None:
+        self.train = True
+        return
+
+    def forward(self, _input):
+        pass
 
     def backward(self):
-        """
-        back propagation looks like this:
+        pass
 
-        """
-        if self.output:
-            ...
+    def parameters(self):
+        pass
+
+    def training(self):
+        self.train = True
+
+    def evaluating(self):
+        self.train = False
 
 
-class Sequential(Layer):
+class FullyConnectedLayer(BaseLayer):
+    def __init__(self, input_dim, output_dim) -> None:
+        super().__init__()
+
+        # He initialization - optimized for ReLU activation
+        self.weights = np.random.randn(output_dim, input_dim) * np.sqrt(2/input_dim)
+        self.biases = np.zeros((output_dim, 1))
+
+    def forward(self, _input):
+        self._input = _input
+        self._output = np.dot(self.weights, self._input) + self.biases
+        return self._output
+
+    def backward(self):
+        ...
+
+    def parameters(self):
+        return
+
+    def type(self):
+        return "Fully Connected Layer"
+
+
+class Sequential(BaseLayer):
     def __init__(self) -> None:
-        Layer.__init__(self)
+        super().__init__()
         self.layers = []
 
     def add(self, layer):
@@ -41,25 +61,107 @@ class Sequential(Layer):
     def size(self):
         return len(self.layers)
 
-    def forward(self, input):
-        pass
+    def components(self):
+        for i in range(self.size()):
+            print(self.layers[i].type())
+
+    def forward(self, _input):
+        self._inputs = [_input]
+        for i in range(self.size()):
+            self._inputs.append(self.layers[i].forward(self._inputs[i]))
+        self._output = self._inputs[-1]
+        return self._output
 
     def backward(self, input):
         pass
 
+    def parameters(self):
+        return
+
     def training(self):
-        pass
+        BaseLayer.training(self)
+        for layer in self.layers:
+            layer.training()
 
-    def evaluate(self):
-        pass
+    def evaluating(self):
+        BaseLayer.evaluating(self)
+        for layer in self.layers:
+            layer.evaluating()
 
 
-class ReLU():
+##########################
+#  ACTIVATION FUNCTIONS  #
+##########################
+
+
+class ReLU(BaseLayer):
     def __init__(self) -> None:
+        super().__init__()
+        return
+
+    def forward(self, _input):
+        self._input = _input
+        self._output = np.maximum(0, self._input)
+        return self._output
+
+    def backward(self):
         pass
 
+    def parameters(self):
+        return None, None
 
-def SoftMaxActivation(z):
-    return np.exp(z) / np.sum(np.exp(z))
+    def type(self):
+        return "ReLU Activation"
 
-example = Layer(784, 32)
+
+class Sigmoid(BaseLayer):
+    def __init__(self) -> None:
+        super().__init__()
+        return
+
+    def forward(self, _input):
+        self._input = _input
+        self._output = 1. / (1 + np.exp(-self._input))
+        return self._output
+
+    def backward(self):
+        pass
+
+    def parameters(self):
+        return None, None
+
+    def type(self):
+        return "Sigmoid Activation"
+
+
+class SoftMax(BaseLayer):
+    def __init__(self) -> None:
+        super().__init__()
+        return
+
+    def forward(self, _input):
+        self._input = _input
+        self._output = np.exp(self._input) / np.sum(np.exp(self._input))
+        return np.argmax(self._output)
+
+    def backward(self):
+        pass
+
+    def parameters(self):
+        return None, None
+
+    def type(self):
+        return "SoftMax Activation"
+
+
+model = Sequential()
+model.add(FullyConnectedLayer(784, 16))
+model.add(ReLU())
+model.add(FullyConnectedLayer(16, 16))
+model.add(ReLU())
+model.add(FullyConnectedLayer(16, 10))
+model.add(SoftMax())
+
+model.forward(np.random.randn(28, 28).reshape(784, 1)) # works properly
+model.backward() # does not work properly
+x = np.array([3, 4])

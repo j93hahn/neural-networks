@@ -73,7 +73,7 @@ class Sequential(BaseLayer):
         self._output = self._inputs[-1]
         return self._output
 
-    def backward(self):
+    def backward(self, input):
         ...
 
     def parameters(self):
@@ -106,7 +106,6 @@ class ReLU(BaseLayer):
         return self._output
 
     def backward(self):
-        # derivative is equal to self._input > 0
         pass
 
     def parameters(self):
@@ -127,7 +126,6 @@ class Sigmoid(BaseLayer):
         return self._output
 
     def backward(self):
-        # unsure of the derivative
         pass
 
     def parameters(self):
@@ -148,7 +146,6 @@ class SoftMax(BaseLayer):
         return np.argmax(self._output)
 
     def backward(self):
-        # unsure of the derivative
         pass
 
     def parameters(self):
@@ -168,9 +165,5 @@ model.add(SoftMax())
 
 
 model.forward(np.random.randn(49, 16).reshape(784, 1)) # works properly
-model.backward() # does not work properly
+#model.backward() # does not work properly
 set_trace()
-
-
-def cost(x, y):
-    return np.sum(np.square(x - y))

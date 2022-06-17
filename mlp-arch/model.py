@@ -2,12 +2,15 @@ import numpy as np
 from pudb import set_trace
 
 
+# https://brilliant.org/wiki/backpropagation/
+
+
 ########################
 #  MODEL CONSTRUCTION  #
 ########################
 
 
-class BaseLayer():
+class Base():
     def __init__(self) -> None:
         self.train = True
         return
@@ -21,14 +24,14 @@ class BaseLayer():
     def paramGradient(self):
         pass
 
-    def training(self):
+    def train(self):
         self.train = True
 
-    def evaluating(self):
+    def eval(self):
         self.train = False
 
 
-class FullyConnectedLayer(BaseLayer):
+class Linear(Base):
     def __init__(self, input_dim, output_dim) -> None:
         super().__init__()
 
@@ -54,10 +57,10 @@ class FullyConnectedLayer(BaseLayer):
         return self.weights, self.biases, self.gradWeights, self.gradBiases
 
     def type(self):
-        return "Fully Connected Layer"
+        return "Linear Layer"
 
 
-class Sequential(BaseLayer):
+class Sequential(Base):
     def __init__(self) -> None:
         super().__init__()
         self.layers = []
@@ -94,15 +97,15 @@ class Sequential(BaseLayer):
                 wg.append(_wg); wb.append(_wb)
         return w, b, wg, wb
 
-    def training(self):
-        BaseLayer.training(self)
+    def train(self):
+        Base.train(self)
         for layer in self.layers:
-            layer.training()
+            layer.train()
 
-    def evaluating(self):
-        BaseLayer.evaluating(self)
+    def eval(self):
+        Base.eval(self)
         for layer in self.layers:
-            layer.evaluating()
+            layer.eval()
 
 
 ##########################
@@ -110,7 +113,7 @@ class Sequential(BaseLayer):
 ##########################
 
 
-class ReLU(BaseLayer):
+class ReLU(Base):
     def __init__(self) -> None:
         super().__init__()
         return
@@ -131,7 +134,7 @@ class ReLU(BaseLayer):
         return "ReLU Activation"
 
 
-class Sigmoid(BaseLayer):
+class Sigmoid(Base):
     def __init__(self) -> None:
         super().__init__()
         return
@@ -152,41 +155,36 @@ class Sigmoid(BaseLayer):
         return "Sigmoid Activation"
 
 
-class SoftMax(BaseLayer):
+class SoftMaxLoss():
     def __init__(self) -> None:
-        super().__init__()
         return
 
-    def forward(self, _input):
-        self._input = _input
-        self._output = np.exp(self._input) / np.sum(np.exp(self._input))
-        return self._output
-        # np.argmax(self._output) gives the highest probability output
+    def forward(self, _input, _labels):
+        self._softmax = np.exp(_input) / np.sum(np.exp(_input))
+        self._loss = -np.sum(np.log(self._softmax) * _labels)
+        self._output = self._loss # to normalize, divide by _input.size
+        return self._output # a single scalar representing cross entropy loss
 
-    def inputGradient(self, _input):
+    def backward(self, _input, _labels):
         # not sure what derivative is
         pass
 
-    def paramGradient(self):
-        return None, None, None, None
-
     def type(self):
-        return "SoftMax Activation"
+        return "SoftMaxLoss Layer"
 
 
 model = Sequential()
-model.add(FullyConnectedLayer(784, 16))
+model.add(Linear(784, 16))
 model.add(ReLU())
-model.add(FullyConnectedLayer(16, 16))
+model.add(Linear(16, 16))
 model.add(ReLU())
-model.add(FullyConnectedLayer(16, 10))
-model.add(SoftMax())
+model.add(Linear(16, 10))
 
 
 model.forward(np.random.randn(49, 16).reshape(784, 1)) # works properly
 #model.backprop() # does not work properly
 model.paramGradient()
-set_trace()
+# set_trace()
 
 
 def cost(x, y):

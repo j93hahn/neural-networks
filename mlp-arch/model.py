@@ -5,9 +5,9 @@ from pudb import set_trace
 # https://brilliant.org/wiki/backpropagation/
 
 
-########################
-#  MODEL CONSTRUCTION  #
-########################
+##########################
+##  MODEL CONSTRUCTION  ##
+##########################
 
 
 class Base():
@@ -18,11 +18,15 @@ class Base():
     def forward(self, _input):
         pass
 
-    def inputGradient(self, _input):
+    def backprop(self, _input, _gradPrev):
         pass
+        """
+        _gradPrev is the gradient/delta of the previous layer in the Sequential
+            model when applying backpropagation
 
-    def paramGradient(self):
-        pass
+        return self._gradCurr multiplies the gradient of the current layer and
+            passes it to the next layer in the sequence
+        """
 
     def train(self):
         self.train = True
@@ -48,13 +52,9 @@ class Linear(Base):
         self._output = np.dot(self.weights, self._input) + self.biases
         return self._output
 
-    # compute gradient with respect to _input vector
-    def inputGradient(self, _input):
-        return
-
-    # return all parameters and their gradients
-    def paramGradient(self):
-        return self.weights, self.biases, self.gradWeights, self.gradBiases
+    def backprop(self, _input, _gradPrev):
+        self._gradCurr = np.dot(_gradPrev, self.weights.T)
+        return self._gradCurr
 
     def type(self):
         return "Linear Layer"
@@ -82,20 +82,13 @@ class Sequential(Base):
         self._output = self._inputs[-1]
         return self._output
 
+    def backprop(self, _input, _gradPrev):
+        ...
+
     def inputGradient(self, _input):
         # similar logic to forward() -- run through all the layers
-        for layer in reversed(range(self.size())):
+        for i in reversed(range(self.size())):
             ...
-
-    def paramGradient(self):
-        w = []; b = []; wg = []; wb = []
-        for layer in self.layers:
-            _w, _b, _wg, _wb = layer.paramGradient()
-            # activation layers do no have trainable parameters
-            if np.all(_w != None):
-                w.append(_w); b.append(_b)
-                wg.append(_wg); wb.append(_wb)
-        return w, b, wg, wb
 
     def train(self):
         Base.train(self)
@@ -108,9 +101,9 @@ class Sequential(Base):
             layer.eval()
 
 
-##########################
-#  ACTIVATION FUNCTIONS  #
-##########################
+############################
+##  ACTIVATION FUNCTIONS  ##
+############################
 
 
 class ReLU(Base):
@@ -123,12 +116,11 @@ class ReLU(Base):
         self._output = np.maximum(0, self._input)
         return self._output
 
-    def inputGradient(self, _input):
-        # derivative is just _input > 0
-        pass
-
-    def paramGradient(self):
-        return None, None, None, None
+    def backprop(self, _input, _gradPrev):
+        # apply derivative to the input vector space
+        self._mask = self._input > 0
+        self._gradCurr = _gradPrev * self._mask
+        return self._gradCurr
 
     def type(self):
         return "ReLU Activation"
@@ -144,34 +136,38 @@ class Sigmoid(Base):
         self._output = 1. / (1 + np.exp(-self._input))
         return self._output
 
-    def inputGradient(self, _input):
-        # not sure what derivative is
-        pass
-
-    def paramGradient(self):
-        return None, None, None, None
+    def backprop(self, _input, _gradPrev):
+        # calculate derivative on output vector space
+        self._mask = self._output * (1 - self._output)
+        self._gradCurr = _gradPrev * self._mask
+        return self._gradCurr
 
     def type(self):
         return "Sigmoid Activation"
 
 
-class CrossEntropyLoss():
+#######################
+##  ERROR FUNCTIONS  ##
+#######################
+
+
+class SoftMaxLoss():
     def __init__(self) -> None:
         return
 
     def forward(self, _input, _labels):
         # compute softmax activation first
         self._softmax = np.exp(_input) / np.sum(np.exp(_input))
-        self._loss = -np.sum(np.log(self._softmax) * _labels)
-        self._output = self._loss # to normalize, divide by _input.size
-        return self._output # a single scalar representing cross entropy loss
+        self._loglikelihood = -np.sum(np.log(self._softmax) * _labels)
+        self._loss = np.mean(self._loglikelihood)
+        return self._loss # a single scalar representing cross entropy loss
 
-    def backward(self, _input, _labels):
-        # not sure what derivative is
-        pass
+    def backprop(self, _input, _labels):
+        self._gradCurr
+        return self._gradCurr
 
     def type(self):
-        return "CrossEntropyLoss"
+        return "SoftMaxLoss"
 
 
 class MeanSquaredLoss():
@@ -184,7 +180,7 @@ class MeanSquaredLoss():
         self._output = self._loss # to normalize, divide by _input.size
         return self._output
 
-    def backward(self, _input, _labels):
+    def backprop(self, _input, _labels):
         pass
 
     def type(self):
@@ -202,4 +198,10 @@ model.add(Linear(16, 10))
 model.forward(np.random.randn(49, 16).reshape(784, 1)) # works properly
 #model.backprop() # does not work properly
 # model.paramGradient()
+
+
+loss = SoftMaxLoss()
+value = loss.forward(np.array([0.1, 0.1, 0.1, 0.7]), np.array([0, 0, 0, 1]))
+
+
 set_trace()

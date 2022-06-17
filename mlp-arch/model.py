@@ -155,11 +155,12 @@ class Sigmoid(Base):
         return "Sigmoid Activation"
 
 
-class SoftMaxLoss():
+class CrossEntropyLoss():
     def __init__(self) -> None:
         return
 
     def forward(self, _input, _labels):
+        # compute softmax activation first
         self._softmax = np.exp(_input) / np.sum(np.exp(_input))
         self._loss = -np.sum(np.log(self._softmax) * _labels)
         self._output = self._loss # to normalize, divide by _input.size
@@ -170,7 +171,24 @@ class SoftMaxLoss():
         pass
 
     def type(self):
-        return "SoftMaxLoss Layer"
+        return "CrossEntropyLoss"
+
+
+class MeanSquaredLoss():
+    def __init__(self) -> None:
+        return
+
+    def forward(self, _input, _labels):
+        self._softmax = np.exp(_input) / np.sum(np.exp(_input))
+        self._loss = np.sum(np.square(self._softmax - _labels))
+        self._output = self._loss # to normalize, divide by _input.size
+        return self._output
+
+    def backward(self, _input, _labels):
+        pass
+
+    def type(self):
+        return "MeanSquaredLoss"
 
 
 model = Sequential()
@@ -183,9 +201,5 @@ model.add(Linear(16, 10))
 
 model.forward(np.random.randn(49, 16).reshape(784, 1)) # works properly
 #model.backprop() # does not work properly
-model.paramGradient()
-# set_trace()
-
-
-def cost(x, y):
-    return np.sum(np.square(x - y))
+# model.paramGradient()
+set_trace()

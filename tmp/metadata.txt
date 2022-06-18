@@ -1,3 +1,0 @@
-Both the MNIST and Fashion MNIST datasets contain 60000 images
-  - 50000 training images and labels each
-  - 10000 testing images and labels each

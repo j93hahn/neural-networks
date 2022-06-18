@@ -11,3 +11,4 @@ class DataLoader():
 
 batch = DataLoader("train5")
 data, labels, name, files = batch.data, batch.labels, batch.name, batch.files
+print(name)

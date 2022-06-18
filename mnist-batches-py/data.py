@@ -9,6 +9,7 @@ class DataLoader():
         self.train_labels = mnist["training_labels"]
         self.test_images = mnist["test_images"]
         self.test_labels = mnist["test_labels"]
+        self.name = "MNIST"
         return self
 
     def fashion_mnist(self): # fashion MNIST dataset
@@ -18,4 +19,8 @@ class DataLoader():
         self.train_labels = mnist["training_labels"]
         self.test_images = mnist["test_images"]
         self.test_labels = mnist["test_labels"]
+        self.name = "Fashion MNIST"
         return self
+
+mnist = DataLoader().mnist()
+fashion_mnist = DataLoader().fashion_mnist()

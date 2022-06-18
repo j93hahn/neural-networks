@@ -8,8 +8,8 @@
 *.pdf
 hw5
 .DS_Store
-cifar-10-batches-py/data_batch_*
-cifar-10-batches-py/test_batch
+cifar-10-batches-py/train*
+cifar-10-batches-py/test
 
 
 # User-specific files

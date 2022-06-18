@@ -1,7 +1,6 @@
 import numpy as np
 import pickle
 
-
 class DataLoader():
     def __init__(self, file) -> None:
         self.batch = pickle.load(open(file, 'rb'), encoding='bytes')

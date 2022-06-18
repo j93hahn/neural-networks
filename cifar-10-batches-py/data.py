@@ -1,22 +1,14 @@
-# https://www.cs.toronto.edu/~kriz/cifar.html
-
-import pickle
 import numpy as np
+import pickle
 
-def unpickle(file):
-    with open(file, 'rb') as fo:
-        dict = pickle.load(fo, encoding='bytes')
-    return dict
 
-def main():
-    # retrieve metadata about this dataset
-    labels = unpickle('batches.meta')
-    print(labels)
+class DataLoader():
+    def __init__(self, file) -> None:
+        self.batch = pickle.load(open(file, 'rb'), encoding='bytes')
+        self.batch_label = self.batch[b'batch_label']
+        self.labels = np.array(self.batch[b'labels'])
+        self.data = self.batch[b'data']
+        self.filenames = self.batch[b'filenames']
 
-    # retrieve data on individual batch
-    data_batch_1 = unpickle('data_batch_1')
-    print(data_batch_1.keys())
-    print(data_batch_1[b'data'].shape) # data and labels are numpy arrays
-
-if __name__ == '__main__':
-    main()
+batch = DataLoader("data_batch_5")
+data, labels = batch.data, batch.labels

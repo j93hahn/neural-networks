@@ -1,7 +1,7 @@
 # sourced and modified from: https://github.com/hsjeong5/MNIST-for-Numpy
 import pickle
 
-class DataLoader():
+class MNISTDataLoader():
     def mnist(self): # MNIST dataset
         with open("mnist.pkl",'rb') as f:
             mnist = pickle.load(f)
@@ -22,5 +22,5 @@ class DataLoader():
         self.name = "Fashion MNIST"
         return self
 
-mnist = DataLoader().mnist()
-fashion_mnist = DataLoader().fashion_mnist()
+mnist = MNISTDataLoader().mnist()
+fashion_mnist = MNISTDataLoader().fashion_mnist()

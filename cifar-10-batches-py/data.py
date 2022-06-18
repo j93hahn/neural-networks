@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
 
-class DataLoader():
+class CifarDataLoader():
     def __init__(self, file) -> None:
         self.batch = pickle.load(open(file, 'rb'), encoding='bytes')
         self.name = self.batch[b'batch_label']
@@ -9,6 +9,6 @@ class DataLoader():
         self.data = self.batch[b'data']
         self.files = self.batch[b'filenames']
 
-batch = DataLoader("train5")
+batch = CifarDataLoader("train5")
 data, labels, name, files = batch.data, batch.labels, batch.name, batch.files
 print(name)

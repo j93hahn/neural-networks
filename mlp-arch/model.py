@@ -79,7 +79,7 @@ class Sequential(Base):
         self._inputs = [_input]
         for i in range(self.size()):
             self._inputs.append(self.layers[i].forward(self._inputs[i]))
-        self._output = self._inputs[-1]
+        self._output = self._inputs[-1] 
         return self._output
 
     def backprop(self, _input, _gradPrev):
@@ -158,8 +158,9 @@ class SoftMaxLoss():
     def forward(self, _input, _labels):
         # compute softmax activation first
         self._softmax = np.exp(_input) / np.sum(np.exp(_input))
-        self._loglikelihood = -np.sum(np.log(self._softmax) * _labels)
-        self._loss = np.mean(self._loglikelihood)
+        self._log = np.log(self._softmax)
+        self._loss = -np.mean(self._log * _labels, axis=0)
+        #self._loss = np.mean(self._loglikelihood)
         return self._loss # a single scalar representing cross entropy loss
 
     def backprop(self, _input, _labels):
@@ -176,8 +177,9 @@ class MeanSquaredLoss():
 
     def forward(self, _input, _labels):
         self._softmax = np.exp(_input) / np.sum(np.exp(_input))
-        self._loss = np.sum(np.square(self._softmax - _labels))
-        self._output = self._loss # to normalize, divide by _input.size
+        # eventually, axis=1 if we account for training batches - 500x10x1
+        self._loss = np.mean(np.square(self._softmax - _labels), axis=0)
+        self._output = self._loss / 2 # may have to np.squeeze here for training batches
         return self._output
 
     def backprop(self, _input, _labels):
@@ -194,14 +196,16 @@ model.add(Linear(16, 16))
 model.add(ReLU())
 model.add(Linear(16, 10))
 
-
+set_trace()
 model.forward(np.random.randn(49, 16).reshape(784, 1)) # works properly
 #model.backprop() # does not work properly
 # model.paramGradient()
 
 
+# loss = MeanSquaredLoss()
 loss = SoftMaxLoss()
-value = loss.forward(np.array([0.1, 0.1, 0.1, 0.7]), np.array([0, 0, 0, 1]))
-
-
+prediction = np.array([[0.1], [0.1], [0.1], [0.7]])
+actual = np.array([[0], [0], [0], [1]])
 set_trace()
+value = loss.forward(prediction, actual)
+print(value)

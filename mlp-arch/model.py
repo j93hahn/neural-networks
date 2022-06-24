@@ -2,9 +2,6 @@ import numpy as np
 from pudb import set_trace
 
 
-# https://brilliant.org/wiki/backpropagation/
-
-
 ##########################
 ##  MODEL CONSTRUCTION  ##
 ##########################
@@ -28,7 +25,7 @@ class Base():
             passes it to the next layer in the sequence
         """
 
-    def gradients(self):
+    def update_params(self, alpha):
         pass
 
     def train(self):
@@ -56,13 +53,21 @@ class Linear(Base):
         return self._output
 
     def backprop(self, _gradPrev):
+        # compute weight gradients here
+        self.gradWeights.fill(0)
+        self.gradBiases.fill(0)
 
-        self._gradCurr = np.dot(_gradPrev, self.weights.T)
+        self.gradWeights = np.dot(self._input, _gradPrev.T).T
+        self.gradBiases = np.mean(_gradPrev, axis=0).T
+
+        # pass gradient to next layer in backward propagation
+        self._gradCurr = np.dot(self.weights.T, _gradPrev)
         return self._gradCurr
 
-    def gradients(self):
-
-        ...
+    def update_params(self, alpha):
+        if self.train:
+            self.weights += (alpha * self.gradWeights * -1)
+            self.biases += (alpha * self.gradBiases * -1)
 
     def type(self):
         return "Linear Layer"
@@ -86,18 +91,20 @@ class Sequential(Base):
     def forward(self, _input):
         self._inputs = [_input]
         for i in range(self.size()):
-            # print(self.layers[i].type)
             self._inputs.append(self.layers[i].forward(self._inputs[i]))
         self._output = self._inputs[-1]
         return self._output
 
-    def backprop(self, _input, _gradPrev):
-        ...
-
-    def inputGradient(self, _input):
-        # similar logic to forward() -- run through all the layers
+    def backprop(self, _gradPrev):
+        self._gradPrevArray = [0] * (self.size() + 1)
+        self._gradPrevArray[self.size()] = _gradPrev
         for i in reversed(range(self.size())):
-            ...
+            self._gradPrevArray[i] = self.layers[i].backprop(self._gradPrevArray[i + 1])
+
+    def update_params(self, alpha_scheduler): # update_params parameters here
+        alpha = 0.01 # eventually, implement a scheduler
+        for i in range(self.size()):
+            self.layers[i].update_params(alpha)
 
     def train(self):
         Base.train(self)
@@ -129,8 +136,7 @@ class ReLU(Base):
         # input and output vectors have same dimension
         self._derivative = self._input > 0
         # self._gradCurr = _gradPrev * self._mask
-        self._gradCurr = np.diag(np.squeeze(self._derivative)).dot() #? figure out dimensions here
-        self._gradCurr
+        self._gradCurr = np.diag(np.squeeze(self._derivative)).dot(_gradPrev)
         return self._gradCurr
 
     def type(self):
@@ -167,10 +173,10 @@ class SoftMax(Base):
         self._output = np.exp(self._input) / np.sum(np.exp(self._input))
         return self._output
 
-    def backprop(self):
+    def backprop(self, _gradPrev):
         # if i == j, return the derivative, else 0
         self._derivative = self._output * (1 - self._output)
-        self._gradCurr = np.diag(np.squeeze(self._derivative))
+        self._gradCurr = np.diag(np.squeeze(self._derivative)).dot(_gradPrev)
         return self._gradCurr
 
     def type(self):
@@ -186,7 +192,7 @@ class CrossEntropyLoss():
     def __init__(self) -> None:
         return
 
-    def forward(self, _input, _labels):
+    def loss(self, _input, _labels):
         self._input = _input
         self._log = np.log(self._input)
         self._loss = -np.sum(self._log * _labels)
@@ -226,23 +232,16 @@ model.add(ReLU())
 model.add(Linear(16, 10))
 model.add(SoftMax())
 
-set_trace()
-model.forward(np.random.randn(49, 16).reshape(784, 1)) # works properly
-#model.backprop() # does not work properly
-# model.paramGradient()
+#set_trace()
+input = np.random.randn(49, 16).reshape(784, 1)
+predict = model.forward(input) # works properly
+actual = np.array([[1], [0], [0], [0], [0], [0], [0], [0], [0], [0]])
 
-
-# loss = MeanSquaredLoss()
 loss = CrossEntropyLoss()
-# set_trace()
-loss.backprop(np.array([[0.1], [0.1], [0.1], [0.7]]),
-              np.array([[0], [0], [0], [1]]))
+error = loss.backprop(predict, actual)
 
 set_trace()
-model.backprop()
+model.backprop(error)
 
-prediction = np.array([[0.1], [0.1], [0.1], [0.7]])
-actual = np.array([[0], [0], [0], [1]])
 set_trace()
-value = loss.forward(prediction, actual)
-print(value)
+model.update_params(0.01)

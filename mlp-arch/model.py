@@ -18,7 +18,7 @@ class Base():
     def forward(self, _input):
         pass
 
-    def backprop(self, _input, _gradPrev):
+    def backprop(self, _gradPrev):
         pass
         """
         _gradPrev is the gradient/delta of the previous layer in the Sequential
@@ -27,6 +27,9 @@ class Base():
         return self._gradCurr multiplies the gradient of the current layer and
             passes it to the next layer in the sequence
         """
+
+    def gradients(self):
+        pass
 
     def train(self):
         self.train = True
@@ -52,9 +55,14 @@ class Linear(Base):
         self._output = np.dot(self.weights, self._input) + self.biases
         return self._output
 
-    def backprop(self, _input, _gradPrev):
+    def backprop(self, _gradPrev):
+
         self._gradCurr = np.dot(_gradPrev, self.weights.T)
         return self._gradCurr
+
+    def gradients(self):
+
+        ...
 
     def type(self):
         return "Linear Layer"
@@ -78,8 +86,9 @@ class Sequential(Base):
     def forward(self, _input):
         self._inputs = [_input]
         for i in range(self.size()):
+            # print(self.layers[i].type)
             self._inputs.append(self.layers[i].forward(self._inputs[i]))
-        self._output = self._inputs[-1] 
+        self._output = self._inputs[-1]
         return self._output
 
     def backprop(self, _input, _gradPrev):
@@ -116,10 +125,12 @@ class ReLU(Base):
         self._output = np.maximum(0, self._input)
         return self._output
 
-    def backprop(self, _input, _gradPrev):
-        # apply derivative to the input vector space
-        self._mask = self._input > 0
-        self._gradCurr = _gradPrev * self._mask
+    def backprop(self, _gradPrev):
+        # input and output vectors have same dimension
+        self._derivative = self._input > 0
+        # self._gradCurr = _gradPrev * self._mask
+        self._gradCurr = np.diag(np.squeeze(self._derivative)).dot() #? figure out dimensions here
+        self._gradCurr
         return self._gradCurr
 
     def type(self):
@@ -136,7 +147,7 @@ class Sigmoid(Base):
         self._output = 1. / (1 + np.exp(-self._input))
         return self._output
 
-    def backprop(self, _input, _gradPrev):
+    def backprop(self, _gradPrev):
         # calculate derivative on output vector space
         self._mask = self._output * (1 - self._output)
         self._gradCurr = _gradPrev * self._mask
@@ -146,29 +157,47 @@ class Sigmoid(Base):
         return "Sigmoid Activation"
 
 
+class SoftMax(Base):
+    def __init__(self) -> None:
+        super().__init__()
+        return
+
+    def forward(self, _input):
+        self._input = _input
+        self._output = np.exp(self._input) / np.sum(np.exp(self._input))
+        return self._output
+
+    def backprop(self):
+        # if i == j, return the derivative, else 0
+        self._derivative = self._output * (1 - self._output)
+        self._gradCurr = np.diag(np.squeeze(self._derivative))
+        return self._gradCurr
+
+    def type(self):
+        return "SoftMax Activation"
+
+
 #######################
 ##  ERROR FUNCTIONS  ##
 #######################
 
 
-class SoftMaxLoss():
+class CrossEntropyLoss():
     def __init__(self) -> None:
         return
 
     def forward(self, _input, _labels):
-        # compute softmax activation first
-        self._softmax = np.exp(_input) / np.sum(np.exp(_input))
-        self._log = np.log(self._softmax)
-        self._loss = -np.mean(self._log * _labels, axis=0)
-        #self._loss = np.mean(self._loglikelihood)
-        return self._loss # a single scalar representing cross entropy loss
+        self._input = _input
+        self._log = np.log(self._input)
+        self._loss = -np.sum(self._log * _labels)
+        return self._loss
 
     def backprop(self, _input, _labels):
-        self._gradCurr
-        return self._gradCurr
+        self._grad = _labels - _input
+        return self._grad
 
     def type(self):
-        return "SoftMaxLoss"
+        return "CrossEntropyLoss"
 
 
 class MeanSquaredLoss():
@@ -195,6 +224,7 @@ model.add(ReLU())
 model.add(Linear(16, 16))
 model.add(ReLU())
 model.add(Linear(16, 10))
+model.add(SoftMax())
 
 set_trace()
 model.forward(np.random.randn(49, 16).reshape(784, 1)) # works properly
@@ -203,7 +233,14 @@ model.forward(np.random.randn(49, 16).reshape(784, 1)) # works properly
 
 
 # loss = MeanSquaredLoss()
-loss = SoftMaxLoss()
+loss = CrossEntropyLoss()
+# set_trace()
+loss.backprop(np.array([[0.1], [0.1], [0.1], [0.7]]),
+              np.array([[0], [0], [0], [1]]))
+
+set_trace()
+model.backprop()
+
 prediction = np.array([[0.1], [0.1], [0.1], [0.7]])
 actual = np.array([[0], [0], [0], [1]])
 set_trace()

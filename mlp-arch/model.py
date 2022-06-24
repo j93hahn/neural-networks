@@ -15,11 +15,11 @@ class Base():
     def forward(self, _input):
         pass
 
-    def backprop(self, _gradPrev):
+    def backward(self, _gradPrev):
         pass
         """
         _gradPrev is the gradient/delta of the previous layer in the Sequential
-            model when applying backpropagation
+            model when applying backwardagation
 
         return self._gradCurr multiplies the gradient of the current layer and
             passes it to the next layer in the sequence
@@ -52,7 +52,7 @@ class Linear(Base):
         self._output = np.dot(self.weights, self._input) + self.biases
         return self._output
 
-    def backprop(self, _gradPrev):
+    def backward(self, _gradPrev):
         # compute weight gradients here
         self.gradWeights.fill(0)
         self.gradBiases.fill(0)
@@ -95,11 +95,11 @@ class Sequential(Base):
         self._output = self._inputs[-1]
         return self._output
 
-    def backprop(self, _gradPrev):
+    def backward(self, _gradPrev):
         self._gradPrevArray = [0] * (self.size() + 1)
         self._gradPrevArray[self.size()] = _gradPrev
         for i in reversed(range(self.size())):
-            self._gradPrevArray[i] = self.layers[i].backprop(self._gradPrevArray[i + 1])
+            self._gradPrevArray[i] = self.layers[i].backward(self._gradPrevArray[i + 1])
 
     def update_params(self, alpha_scheduler): # update_params parameters here
         alpha = 0.01 # eventually, implement a scheduler
@@ -132,7 +132,7 @@ class ReLU(Base):
         self._output = np.maximum(0, self._input)
         return self._output
 
-    def backprop(self, _gradPrev):
+    def backward(self, _gradPrev):
         # input and output vectors have same dimension
         self._derivative = self._input > 0
         # self._gradCurr = _gradPrev * self._mask
@@ -153,7 +153,7 @@ class Sigmoid(Base):
         self._output = 1. / (1 + np.exp(-self._input))
         return self._output
 
-    def backprop(self, _gradPrev):
+    def backward(self, _gradPrev):
         # calculate derivative on output vector space
         self._mask = self._output * (1 - self._output)
         self._gradCurr = _gradPrev * self._mask
@@ -173,7 +173,7 @@ class SoftMax(Base):
         self._output = np.exp(self._input) / np.sum(np.exp(self._input))
         return self._output
 
-    def backprop(self, _gradPrev):
+    def backward(self, _gradPrev):
         # if i == j, return the derivative, else 0
         self._derivative = self._output * (1 - self._output)
         self._gradCurr = np.diag(np.squeeze(self._derivative)).dot(_gradPrev)
@@ -198,7 +198,7 @@ class CrossEntropyLoss():
         self._loss = -np.sum(self._log * _labels)
         return self._loss
 
-    def backprop(self, _input, _labels):
+    def backward(self, _input, _labels):
         self._grad = _labels - _input
         return self._grad
 
@@ -217,7 +217,7 @@ class MeanSquaredLoss():
         self._output = self._loss / 2 # may have to np.squeeze here for training batches
         return self._output
 
-    def backprop(self, _input, _labels):
+    def backward(self, _input, _labels):
         pass
 
     def type(self):
@@ -238,10 +238,10 @@ predict = model.forward(input) # works properly
 actual = np.array([[1], [0], [0], [0], [0], [0], [0], [0], [0], [0]])
 
 loss = CrossEntropyLoss()
-error = loss.backprop(predict, actual)
+error = loss.backward(predict, actual)
 
 set_trace()
-model.backprop(error)
+model.backward(error)
 
 set_trace()
 model.update_params(0.01)

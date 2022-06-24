@@ -58,7 +58,7 @@ class Linear(Base):
         self.gradBiases.fill(0)
 
         self.gradWeights = np.dot(self._input, _gradPrev.T)
-        self.gradBiases = np.mean(_gradPrev, axis=0).T
+        self.gradBiases = np.mean(_gradPrev, axis=0)
 
         # pass gradient to next layer in backward propagation
         self._gradCurr = np.dot(self.weights.T, _gradPrev)
@@ -67,7 +67,7 @@ class Linear(Base):
     def update_params(self, alpha):
         if self.train:
             self.weights += (alpha * self.gradWeights.T * -1)
-            self.biases += (alpha * self.gradBiases * -1)
+            self.biases += (alpha * self.gradBiases.T * -1)
 
     def type(self):
         return "Linear Layer"

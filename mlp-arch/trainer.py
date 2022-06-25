@@ -1,5 +1,5 @@
 import numpy as np
-from ..data_loaders import MNISTDataLoader
+from .. import data_loaders
 from .loader import mnist, CrossEntropyLoss
 #from loader import mnist
 from pudb import set_trace

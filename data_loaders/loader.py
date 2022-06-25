@@ -27,7 +27,8 @@ class MNISTDataLoader():
 
 class CifarDataLoader():
     def __init__(self, file) -> None:
-        self.batch = pickle.load(open("data_loaders/" + file, 'rb'), encoding='bytes')
+        self.batch = pickle.load(open("data_loaders/" + file, 'rb'), \
+            encoding='bytes')
         self.name = self.batch[b'batch_label']
         self.labels = np.array(self.batch[b'labels'])
         self.data = self.batch[b'data']
@@ -36,6 +37,3 @@ class CifarDataLoader():
 
 mnist = MNISTDataLoader().mnist()
 fashion_mnist = MNISTDataLoader().fashion_mnist()
-
-batch = CifarDataLoader("train5")
-data, labels, name, files = batch.data, batch.labels, batch.name, batch.files

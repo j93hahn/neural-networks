@@ -2,9 +2,11 @@ from .module import Module
 
 
 class Sequential(Module):
-    def __init__(self) -> None:
+    def __init__(self, *args: Module) -> None:
         super().__init__()
         self.layers = []
+        for arg in args:
+            self.add(arg)
 
     def size(self):
         return len(self.layers)

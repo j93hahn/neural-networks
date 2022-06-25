@@ -107,13 +107,12 @@ class Sequential(Base):
             self.layers[i].update_params(alpha)
 
     def train(self):
-        # Base.train(self)
         self.train
         for layer in self.layers:
             layer.train
 
     def eval(self):
-        Base.eval(self)
+        self.eval
         for layer in self.layers:
             layer.eval()
 

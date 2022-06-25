@@ -1,8 +1,10 @@
 import numpy as np
-from model import model, CrossEntropyLoss
-from loader import mnist
+from ..data_loaders import MNISTDataLoader
+from .loader import mnist, CrossEntropyLoss
+#from loader import mnist
 from pudb import set_trace
 
+set_trace()
 
 def trainer(model):
     #set_trace()
@@ -48,7 +50,8 @@ def tester(model):
 
 
 def main():
-    trainer(model)
+    #trainer(model)
+    ...
     #tester(model)
 
 

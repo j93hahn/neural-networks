@@ -17,10 +17,10 @@ class CrossEntropyLoss(object):
         return self._grad
 
     def type(self):
-        return "CrossEntropyLoss"
+        return "Cross Entropy Loss"
 
 
-class MeanSquaredLoss(object):
+class MSELoss(object):
     def __init__(self) -> None:
         return
 
@@ -35,4 +35,4 @@ class MeanSquaredLoss(object):
         pass
 
     def type(self):
-        return "MeanSquaredLoss"
+        return "Mean Squared Error Loss"

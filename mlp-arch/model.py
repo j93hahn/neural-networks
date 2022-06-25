@@ -107,9 +107,10 @@ class Sequential(Base):
             self.layers[i].update_params(alpha)
 
     def train(self):
-        Base.train(self)
+        # Base.train(self)
+        self.train
         for layer in self.layers:
-            layer.train()
+            layer.train
 
     def eval(self):
         Base.eval(self)
@@ -240,8 +241,8 @@ actual = np.array([[1], [0], [0], [0], [0], [0], [0], [0], [0], [0]])
 loss = CrossEntropyLoss()
 error = loss.backward(predict, actual)
 
-set_trace()
+#set_trace()
 model.backward(error)
 
-set_trace()
+#set_trace()
 model.update_params(0.01)

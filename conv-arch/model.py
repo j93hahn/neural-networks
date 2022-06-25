@@ -1,9 +1,33 @@
-import sys
-sys.path.insert(0, '../mlp-arch/')
-
 import numpy as np
 from pudb import set_trace
-from model import Base, Sequential, Linear, ReLU
+
+
+class Base():
+    def __init__(self) -> None:
+        self.train = True
+        return
+
+    def forward(self, _input):
+        pass
+
+    def backward(self, _gradPrev):
+        pass
+        """
+        _gradPrev is the gradient/delta of the previous layer in the Sequential
+            model when applying backwardagation
+
+        return self._gradCurr multiplies the gradient of the current layer and
+            passes it to the next layer in the sequence
+        """
+
+    def update_params(self, alpha):
+        pass
+
+    def train(self):
+        self.train = True
+
+    def eval(self):
+        self.train = False
 
 
 class Conv2d(Base):
@@ -25,15 +49,8 @@ class Conv2d(Base):
         return "Conv2d Layer"
 
 
-# deep residual network class (ResNet)
-class ResNet():
+class MaxPool(Base):
     def __init__(self) -> None:
-        pass
+        super().__init__()
 
 
-model = Sequential()
-model.add(Linear(784, 32))
-model.add(ReLU())
-model.add(Linear(32, 16))
-#print(model.components())
-model.components()

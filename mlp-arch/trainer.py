@@ -15,14 +15,15 @@ def trainer(model):
 
     for e in range(epochs):
         for i in range(iterations):
-            prediction = model.forward(mnist.train_images[i][:, np.newaxis])
+            prediction, denom_sum = model.forward(mnist.train_images[i][:, np.newaxis])
             actual = np.zeros((10, 1)) # produce one-hot encoding
             actual[mnist.train_labels[i]] = 1
 
             error = loss.loss(prediction, actual)
-            if i >= 50 and i <= 150:
-                print("iteration" + str(i) + "--------")
+            if i <= 50: # and i <= 150:
+                print("iteration " + str(i) + " --------")
                 print(prediction)
+                print(denom_sum)
                 print(actual)
                 print(error)
 
@@ -44,6 +45,7 @@ def tester(model):
         if np.argmax(prediction) == mnist.test_labels[i]:
             count += 1
     print(count/iterations)
+
 
 def main():
     trainer(model)

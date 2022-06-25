@@ -41,7 +41,7 @@ class Linear(Base):
 
         # He initialization - optimized for ReLU activation
         self.weights = np.random.randn(output_dim, input_dim) * np.sqrt(2/input_dim)
-        self.biases = np.zeros((output_dim, 1))
+        self.biases = np.random.randn(output_dim, 1)
 
         # Gradient arrays for parameters
         self.gradWeights = np.zeros_like(self.weights)
@@ -171,8 +171,9 @@ class SoftMax(Base):
 
     def forward(self, _input):
         self._input = _input
-        self._output = np.exp(self._input) / np.sum(np.exp(self._input))
-        return self._output
+        self._denom = np.sum(np.exp(self._input))
+        self._output = np.exp(self._input) / self._denom
+        return self._output, self._denom
 
     def backward(self, _gradPrev):
         # if i == j, return the derivative, else 0
@@ -195,8 +196,9 @@ class CrossEntropyLoss():
 
     def loss(self, _input, _labels):
         self._input = _input
-        self._log = np.log(self._input)
-        self._loss = -np.sum(self._log * _labels)
+        #self._log = np.log(self._input)
+        #self._loss = -np.sum(self._log * _labels)
+        self._loss = np.mean(np.square(self._input - _labels), axis=0)
         return self._loss
 
     def backward(self, _input, _labels):
@@ -226,23 +228,9 @@ class MeanSquaredLoss():
 
 
 model = Sequential()
-model.add(Linear(784, 16))
+model.add(Linear(784, 10))
 model.add(ReLU())
-model.add(Linear(16, 16))
+model.add(Linear(10, 10))
 model.add(ReLU())
-model.add(Linear(16, 10))
+model.add(Linear(10, 10))
 model.add(SoftMax())
-
-#set_trace()
-input = np.random.randn(49, 16).reshape(784, 1)
-predict = model.forward(input) # works properly
-actual = np.array([[1], [0], [0], [0], [0], [0], [0], [0], [0], [0]])
-
-loss = CrossEntropyLoss()
-error = loss.backward(predict, actual)
-
-#set_trace()
-model.backward(error)
-
-#set_trace()
-model.update_params(0.01)

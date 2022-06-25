@@ -1,13 +1,17 @@
+import sys
+sys.path.insert(0, '../mnist-batches-py/')
+
 import numpy as np
+from model import model, CrossEntropyLoss
 
 
-class Trainer():
-    def __init__(self) -> None:
-        pass
+def trainer(model):
+    ...
 
 
 def main():
-    ...
+    trainer(model)
+
 
 
 if __name__ == '__main__':

@@ -8,5 +8,5 @@ from .transformer import Transformer
 
 __all__ = [
     'Module', 'Linear', 'Sequential', 'ReLU', 'SoftMax', 'CrossEntropyLoss',
-    'Conv2d', 'MaxPool', 'Transformer'
+    'Conv2d', 'MaxPool', 'Transformer', 'Sigmoid', 'MSELoss'
 ]

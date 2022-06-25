@@ -4,12 +4,8 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 # Personal Ignores
-*.pkl
-*.pdf
 hw5
 .DS_Store
-cifar-10-batches-py/train*
-cifar-10-batches-py/test
 
 
 # User-specific files

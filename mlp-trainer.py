@@ -32,7 +32,7 @@ def trainer(model, loss):
             model.backward(loss.backward(prediction, actual))
             model.update_params(0.01)
 
-    torch.save(model, 'check.pt')
+    torch.save(model, 'model-mlp.pt')
     #set_trace()
     #print(model.layers)
 
@@ -74,7 +74,7 @@ def main():
     trainer(model, loss)
     print("Starting testing now")
     # set_trace()
-    model = torch.load('check.pt')
+    model = torch.load('model-mlp.pt')
     tester(model)
 
 

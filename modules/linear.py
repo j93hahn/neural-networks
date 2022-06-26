@@ -6,8 +6,12 @@ class Linear(Module):
         super().__init__()
 
         # He initialization - optimized for ReLU activation
-        self.weights = np.random.randn(output_dim, input_dim) * np.sqrt(2/input_dim)
-        self.biases = np.random.randn(output_dim, 1)
+        # self.weights = np.random.randn(output_dim, input_dim) * np.sqrt(2/input_dim)
+        # self.biases = np.random.randn(output_dim, 1)
+
+        # Gaussian distribution
+        self.weights = np.random.normal(0, 1 / input_dim, (output_dim, input_dim))
+        self.biases = np.random.normal(0, 1, (output_dim, 1))
 
         # Gradient arrays for parameters
         self.gradWeights = np.zeros_like(self.weights)

@@ -3,6 +3,7 @@ import modules as m
 from data_loaders import mnist
 from pudb import set_trace
 import torch
+import matplotlib.pyplot as plt
 
 
 def trainer(model, loss):
@@ -51,6 +52,11 @@ def tester(model):
         if i % 1000 == 0:
             print("iteration " + str(i) + " --------")
     print(count/iterations)
+
+
+def visualizer():
+    # generate plot of errors over each epoch
+    ...
 
 
 def main():

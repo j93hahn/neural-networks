@@ -50,9 +50,8 @@ class SoftMax(Module):
 
     def forward(self, _input):
         self._input = _input
-        self._denom = np.sum(np.exp(self._input))
-        self._output = np.exp(self._input) / self._denom
-        return self._output, self._denom
+        self._output = np.exp(self._input) / np.sum(np.exp(self._input))
+        return self._output
 
     def backward(self, _gradPrev):
         # if i == j, return the derivative, else 0

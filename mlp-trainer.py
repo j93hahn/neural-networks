@@ -23,7 +23,7 @@ def trainer(model, loss):
     errors = np.zeros(60)
 
     for e in range(epochs):
-        print("############### epoch " + str(e) + " ###############")
+        print("############### epoch " + str(e + 1) + " ###############")
         for i in range(iterations):
             prediction = model.forward(mnist.train_images[i][:, np.newaxis])
             actual = np.zeros((10, 1)) # produce one-hot encoding
@@ -43,7 +43,7 @@ def trainer(model, loss):
             model.update_params(0.1)
 
     errors = errors / epochs #average errors loss
-    torch.save(model, 'mlp-arch/model-mlp.pt')
+    torch.save(model, 'mlp-arch/model-two.pt')
     return ii, errors
     #set_trace()
     #print(model.layers)
@@ -69,7 +69,9 @@ def tester(model):
 def visualizer(ii, errors):
     # generate plot of errors over each epoch
     plt.plot(ii, errors)
-    plt.title("Average Cross Entropy Loss on 15 Training Epochs")
+    plt.title("Average C.E. Loss over 15 Epochs for every 1000 Batches")
+    plt.xlabel("Number of Batches (Size = 1)")
+    plt.ylabel("Average C.E. Loss for each Example")
     plt.savefig("plots/loss_plot_two.png")
     plt.show()
 
@@ -86,11 +88,12 @@ def main():
 
     loss = m.CrossEntropyLoss()
 
+    #set_trace()
     ii, errors = trainer(model, loss)
     print("Starting testing now")
     # set_trace()
-    model = torch.load('mlp-arch/model-mlp.pt')
-    tester(model)
+    trained_model = torch.load('mlp-arch/model-two.pt')
+    tester(trained_model)
     visualizer(ii, errors)
 
 

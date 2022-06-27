@@ -1,8 +1,9 @@
 alpha: 0.1
-success rate on test set: 8.92%
+success rate on test set: 10.1%
 backprop: SGD
 epochs: 1
-dataset: MNIST
+dataset: MNIST, training set
+batch size: 1
 
 notes: very inaccurate, and highly unpredictable loss. Model does not seem to
         learn very well from the training dataset

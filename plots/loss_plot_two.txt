@@ -1,8 +1,9 @@
 alpha: 0.1
-success rate on test set: 9.58%
+success rate on test set: 9.74%
 backprop: SGD
 epochs: 15
-dataset: MNIST
+dataset: MNIST, training set
+batch size: 1
 
 notes: increasing training time does not seem to improve the model. will need
         to change its parameter updating methodologies

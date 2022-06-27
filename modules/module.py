@@ -15,7 +15,7 @@ class Module():
             passes it to the next layer in the sequence
         """
 
-    def update_params(self, alpha):
+    def update_params(self, time):
         pass
 
     def train(self):

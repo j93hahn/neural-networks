@@ -1,6 +1,5 @@
 import numpy as np
 import modules as m
-import optimizers as o
 from data_loaders import mnist
 from pudb import set_trace
 import torch
@@ -9,16 +8,11 @@ from tqdm import tqdm
 import matplotlib
 
 
-def alpha_scheduler(iteration):
-    # this will be the n(t) function to determine alpha
-    ...
-
-
 def trainer(model, loss):
     #set_trace()
     model.train()
     batch_size = 1 # SGD
-    epochs = 1
+    epochs = 5
     #iterations = int(mnist.train_images.shape[0] / batch_size)
     T = 100000
     #ii = np.arange(0, T, 1)
@@ -29,7 +23,7 @@ def trainer(model, loss):
 
     for e in range(epochs):
         print("-- EPOCH " + str(e + 1) + " --")
-        for i in tqdm(range(T)):
+        for t in tqdm(range(T)):
             j = np.random.randint(0, 60000)
             prediction = model.forward(mnist.train_images[j][:, np.newaxis])
             actual = np.zeros((10, 1)) # produce one-hot encoding
@@ -44,9 +38,10 @@ def trainer(model, loss):
                 #print(error)
             #    x = int(i / 1000)
             #    errors[x] += error
+            set_trace()
 
             model.backward(loss.backward(prediction, actual))
-            model.update_params(0.1)
+            model.update_params(t) # t used for adam optimization
 
     #errors = errors / epochs #average errors loss
     torch.save(model, 'mlp-arch/model-4.pt')

@@ -5,11 +5,7 @@ class Linear(Module):
     def __init__(self, input_dim, output_dim) -> None:
         super().__init__()
 
-        # He initialization - optimized for ReLU activation
-        # self.weights = np.random.randn(output_dim, input_dim) * np.sqrt(2/input_dim)
-        # self.biases = np.random.randn(output_dim, 1)
-
-        # Gaussian distribution
+        # Gaussian distribution initialization
         self.weights = np.random.normal(0, 1 / input_dim, (output_dim, input_dim))
         self.biases = np.random.normal(0, 1, (output_dim, 1))
 

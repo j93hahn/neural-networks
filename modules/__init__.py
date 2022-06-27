@@ -1,5 +1,5 @@
 from .module import Module
-from .linear import Linear
+from .linear import Linear, Dropout
 from .container import Sequential
 from .activation import ReLU, SoftMax, Sigmoid
 from .loss import CrossEntropyLoss, MSELoss
@@ -8,5 +8,5 @@ from .transformer import Transformer
 
 __all__ = [
     'Module', 'Linear', 'Sequential', 'ReLU', 'SoftMax', 'CrossEntropyLoss',
-    'Conv2d', 'MaxPool', 'Transformer', 'Sigmoid', 'MSELoss'
+    'Conv2d', 'MaxPool', 'Transformer', 'Sigmoid', 'MSELoss', 'Dropout'
 ]

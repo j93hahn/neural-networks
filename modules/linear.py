@@ -1,6 +1,7 @@
 from .module import Module
 import numpy as np
 
+
 class Linear(Module):
     def __init__(self, input_dim, output_dim) -> None:
         super().__init__()
@@ -37,3 +38,24 @@ class Linear(Module):
 
     def type(self):
         return "Linear Layer"
+
+
+class Dropout(Module):
+    def __init__(self, p=0.5) -> None:
+        super().__init__()
+        self._p = p # common application
+
+    def forward(self, _input):
+        self._output = _input
+        self._distribution = np.random.binomial(n=1, p=1-self._p, size=_input.shape)
+        self._output *= self._distribution
+        return self._output
+
+    def backward(self, _gradPrev):
+        # scale the backwards pass by the same amount
+        self._gradCurr = _gradPrev
+        self._gradCurr *= self._distribution
+        return self._gradCurr
+
+    def type(self):
+        return "Dropout Layer"

@@ -15,7 +15,7 @@ def trainer(model, loss):
     #set_trace()
     model.train
     batch_size = 1 # SGD
-    epochs = 15
+    epochs = 1
     iterations = int(mnist.train_images.shape[0] / batch_size)
     # actual = np.zeros((10, 1))
     ii = np.arange(0, 60000, 1000)
@@ -43,7 +43,7 @@ def trainer(model, loss):
             model.update_params(0.1)
 
     errors = errors / epochs #average errors loss
-    torch.save(model, 'mlp-arch/model-two.pt')
+    torch.save(model, 'mlp-arch/model-three.pt')
     return ii, errors
     #set_trace()
     #print(model.layers)
@@ -69,10 +69,10 @@ def tester(model):
 def visualizer(ii, errors):
     # generate plot of errors over each epoch
     plt.plot(ii, errors)
-    plt.title("Average C.E. Loss over 15 Epochs for every 1000 Batches")
+    plt.title("Cross Entropy Loss over 1 Epoch for every 1000 Batches")
     plt.xlabel("Number of Batches (Size = 1)")
-    plt.ylabel("Average C.E. Loss for each Example")
-    plt.savefig("plots/loss_plot_two.png")
+    plt.ylabel("Cross Entropy Loss for each Example")
+    plt.savefig("plots/loss_plot_three.png")
     plt.show()
 
 
@@ -80,6 +80,7 @@ def main():
     model = m.Sequential(
         m.Linear(784, 16),
         m.ReLU(),
+        m.Dropout(),
         m.Linear(16, 16),
         m.ReLU(),
         m.Linear(16, 10),
@@ -92,7 +93,7 @@ def main():
     ii, errors = trainer(model, loss)
     print("Starting testing now")
     # set_trace()
-    trained_model = torch.load('mlp-arch/model-two.pt')
+    trained_model = torch.load('mlp-arch/model-three.pt')
     tester(trained_model)
     visualizer(ii, errors)
 

@@ -1,0 +1,4 @@
+Code and plots for a diffusion hackathon can be found here -
+https://github.com/w-hc/hack_diffusion
+
+We are currently working on writing up a blog.

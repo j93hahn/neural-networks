@@ -19,35 +19,38 @@ def trainer(model, loss):
     model.train()
     batch_size = 1 # SGD
     epochs = 1
-    iterations = int(mnist.train_images.shape[0] / batch_size)
+    #iterations = int(mnist.train_images.shape[0] / batch_size)
+    T = 100000
+    #ii = np.arange(0, T, 1)
     # actual = np.zeros((10, 1))
-    ii = np.arange(0, 60000, 1000)
+    #ii = np.arange(0, 60000, 1000)
 
-    errors = np.zeros(60)
+    #errors = np.zeros(60)
 
     for e in range(epochs):
         print("-- EPOCH " + str(e + 1) + " --")
-        for i in tqdm(range(iterations)):
-            prediction = model.forward(mnist.train_images[i][:, np.newaxis])
+        for i in tqdm(range(T)):
+            j = np.random.randint(0, 60000)
+            prediction = model.forward(mnist.train_images[j][:, np.newaxis])
             actual = np.zeros((10, 1)) # produce one-hot encoding
-            actual[mnist.train_labels[i]] = 1
+            actual[mnist.train_labels[j]] = 1
 
-            error = loss.loss(prediction, actual)
-            if i % 1000 == 0:
+            #error = loss.loss(prediction, actual)
+            #if i % 1000 == 0:
                 #print("iteration " + str(i) + " --------")
                 #print(prediction)
                 #print(denom_sum)
                 #print(actual)
                 #print(error)
-                x = int(i / 1000)
-                errors[x] += error
+            #    x = int(i / 1000)
+            #    errors[x] += error
 
             model.backward(loss.backward(prediction, actual))
             model.update_params(0.1)
 
-    errors = errors / epochs #average errors loss
+    #errors = errors / epochs #average errors loss
     torch.save(model, 'mlp-arch/model-4.pt')
-    return ii, errors
+    #return ii, errors
     #set_trace()
     #print(model.layers)
 
@@ -98,12 +101,13 @@ def main():
     loss = m.CrossEntropyLoss()
 
     #set_trace()
-    ii, errors = trainer(model, loss)
+    #
+    trainer(model, loss)
     print("Starting testing now")
     # set_trace()
     trained_model = torch.load('mlp-arch/model-4.pt')
     tester(trained_model)
-    visualizer(ii, errors)
+    #visualizer(ii, errors)
 
 
 if __name__ == '__main__':

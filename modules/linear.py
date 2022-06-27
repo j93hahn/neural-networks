@@ -43,7 +43,7 @@ class Linear(Module):
 class Dropout(Module):
     def __init__(self, p=0.5) -> None:
         super().__init__()
-        self._p = p # common application
+        self._p = p
 
     def forward(self, _input):
         self._output = _input

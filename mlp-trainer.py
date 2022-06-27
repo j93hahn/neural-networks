@@ -1,9 +1,12 @@
 import numpy as np
 import modules as m
+import optimizers as o
 from data_loaders import mnist
 from pudb import set_trace
 import torch
 import matplotlib.pyplot as plt
+from tqdm import tqdm
+import matplotlib
 
 
 def alpha_scheduler(iteration):
@@ -13,7 +16,7 @@ def alpha_scheduler(iteration):
 
 def trainer(model, loss):
     #set_trace()
-    model.train
+    model.train()
     batch_size = 1 # SGD
     epochs = 1
     iterations = int(mnist.train_images.shape[0] / batch_size)
@@ -23,19 +26,19 @@ def trainer(model, loss):
     errors = np.zeros(60)
 
     for e in range(epochs):
-        print("############### epoch " + str(e + 1) + " ###############")
-        for i in range(iterations):
+        print("-- EPOCH " + str(e + 1) + " --")
+        for i in tqdm(range(iterations)):
             prediction = model.forward(mnist.train_images[i][:, np.newaxis])
             actual = np.zeros((10, 1)) # produce one-hot encoding
             actual[mnist.train_labels[i]] = 1
 
             error = loss.loss(prediction, actual)
             if i % 1000 == 0:
-                print("iteration " + str(i) + " --------")
+                #print("iteration " + str(i) + " --------")
                 #print(prediction)
                 #print(denom_sum)
                 #print(actual)
-                print(error)
+                #print(error)
                 x = int(i / 1000)
                 errors[x] += error
 
@@ -43,7 +46,7 @@ def trainer(model, loss):
             model.update_params(0.1)
 
     errors = errors / epochs #average errors loss
-    torch.save(model, 'mlp-arch/model-three.pt')
+    torch.save(model, 'mlp-arch/model-4.pt')
     return ii, errors
     #set_trace()
     #print(model.layers)
@@ -51,7 +54,7 @@ def trainer(model, loss):
 
 
 def tester(model):
-    model.eval
+    model.eval()
 
     iterations = int(mnist.test_images.shape[0])
     count = 0
@@ -68,12 +71,17 @@ def tester(model):
 
 def visualizer(ii, errors):
     # generate plot of errors over each epoch
+    plot_num = 4
+    image_loc = "plots/loss_plot_" + str(plot_num) + ".png"
+    text_loc = "plots/loss_plot_" + str(plot_num) + ".txt"
     plt.plot(ii, errors)
     plt.title("Cross Entropy Loss over 1 Epoch for every 1000 Batches")
     plt.xlabel("Number of Batches (Size = 1)")
     plt.ylabel("Cross Entropy Loss for each Example")
-    plt.savefig("plots/loss_plot_three.png")
+    plt.savefig(image_loc)
     plt.show()
+    with open(text_loc, 'w') as f:
+        f.close()
 
 
 def main():
@@ -93,7 +101,7 @@ def main():
     ii, errors = trainer(model, loss)
     print("Starting testing now")
     # set_trace()
-    trained_model = torch.load('mlp-arch/model-three.pt')
+    trained_model = torch.load('mlp-arch/model-4.pt')
     tester(trained_model)
     visualizer(ii, errors)
 

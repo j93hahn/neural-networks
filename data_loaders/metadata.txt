@@ -1,3 +1,19 @@
 Both the MNIST and Fashion MNIST datasets contain 70000 images
   - 60000 training images and labels each
   - 10000 testing images and labels each
+
+The Cifar-10 dataset contains 5 training batches (each with 10000 images and
+labels) and one testing batch. The labels are as follows-
+0: airplane
+1: automobile
+2: bird
+3: cat
+4: deer
+5: dog
+6: frog
+7: horse
+8: ship
+9: truck
+
+Each image is a 32x32 image with RGV values (32*32*3=3072 pixels per image per
+batch).

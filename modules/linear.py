@@ -35,7 +35,7 @@ class Linear(Module):
         self.gradBiases.fill(0)
 
         self.gradWeights = np.dot(self._input, _gradPrev.T)
-        self.gradBiases = np.mean(_gradPrev, axis=0) # check this logic later
+        self.gradBiases = np.sum(_gradPrev, axis=0, keepdims=True)
 
         # pass gradient to next layer in backward propagation
         self._gradCurr = np.dot(self.weights.T, _gradPrev)

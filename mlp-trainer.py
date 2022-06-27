@@ -38,7 +38,7 @@ def trainer(model, loss):
                 #print(error)
             #    x = int(i / 1000)
             #    errors[x] += error
-            set_trace()
+            # set_trace()
 
             model.backward(loss.backward(prediction, actual))
             model.update_params(t) # t used for adam optimization

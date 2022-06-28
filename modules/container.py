@@ -4,9 +4,7 @@ from .module import Module
 class Sequential(Module):
     def __init__(self, *args: Module) -> None:
         super().__init__()
-        self.layers = []
-        for arg in args:
-            self.add(arg)
+        self.layers = [*args]
 
     def size(self):
         return len(self.layers)
@@ -14,9 +12,6 @@ class Sequential(Module):
     def components(self):
         for i in range(self.size()):
             print(self.layers[i].type())
-
-    def add(self, layer):
-        self.layers.append(layer)
 
     def forward(self, _input):
         self._inputs = [_input]

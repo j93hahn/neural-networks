@@ -32,7 +32,7 @@ def trainer(model, loss):
         print("-- EPOCH " + str(e + 1) + " --")
         for t in tqdm(range(T)):
             j = np.random.randint(0, 60000)
-            prediction = model.forward(mnist.train_images[j][:, np.newaxis])
+            prediction = model.forward(mnist.train_images[j][:, np.newaxis] / 255)
             actual = np.zeros((10, 1)) # produce one-hot encoding
             actual[mnist.train_labels[j]] = 1
 

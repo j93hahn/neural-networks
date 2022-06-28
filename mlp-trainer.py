@@ -22,11 +22,11 @@ def trainer(model, loss):
     epochs = 1
     #iterations = int(mnist.train_images.shape[0] / batch_size)
     T = 100000
-    #ii = np.arange(0, T, 1)
+    ii = []
     # actual = np.zeros((10, 1))
     #ii = np.arange(0, 60000, 1000)
 
-    #errors = np.zeros(60)
+    errors = []
 
     for e in range(epochs):
         print("-- EPOCH " + str(e + 1) + " --")
@@ -36,15 +36,15 @@ def trainer(model, loss):
             actual = np.zeros((10, 1)) # produce one-hot encoding
             actual[mnist.train_labels[j]] = 1
 
-            #error = loss.loss(prediction, actual)
-            #if i % 1000 == 0:
+            error = loss.loss(prediction, actual)
+            if t % 1000 == 0:
                 #print("iteration " + str(i) + " --------")
                 #print(prediction)
                 #print(denom_sum)
                 #print(actual)
                 #print(error)
-            #    x = int(i / 1000)
-            #    errors[x] += error
+                ii.append(t)
+                errors.append(error)
             # set_trace()
 
             model.backward(loss.backward(prediction, actual))
@@ -52,7 +52,7 @@ def trainer(model, loss):
 
     #errors = errors / epochs #average errors loss
     torch.save(model, file)
-    #return ii, errors
+    return ii, errors
     #set_trace()
     #print(model.layers)
 
@@ -99,14 +99,10 @@ def main():
 
     loss = m.CrossEntropyLoss()
 
-    #set_trace()
-    #
-    trainer(model, loss)
-    print("Starting testing now")
-    # set_trace()
+    ii, errors = trainer(model, loss)
     trained_model = torch.load(file)
     tester(trained_model)
-    #visualizer(ii, errors)
+    visualizer(ii, errors)
 
 
 if __name__ == '__main__':

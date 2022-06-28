@@ -50,5 +50,5 @@ test = BatchNorm(50, 150)
 
 
 x = np.ones((150, 50))
-set_trace()
+#set_trace()
 test.forward(x)

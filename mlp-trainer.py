@@ -8,11 +8,18 @@ from tqdm import tqdm
 import matplotlib
 
 
+# define up here
+model_number = "4"
+file = "mlp-arch/model-" + model_number + ".pt"
+image_loc = "plots/loss_plot_" + model_number + ".png"
+text_loc = "plots/loss_plot_" + model_number + ".txt"
+
+
 def trainer(model, loss):
     #set_trace()
     model.train()
     batch_size = 1 # SGD
-    epochs = 5
+    epochs = 1
     #iterations = int(mnist.train_images.shape[0] / batch_size)
     T = 100000
     #ii = np.arange(0, T, 1)
@@ -44,7 +51,7 @@ def trainer(model, loss):
             model.update_params(t) # t used for adam optimization
 
     #errors = errors / epochs #average errors loss
-    torch.save(model, 'mlp-arch/model-4.pt')
+    torch.save(model, file)
     #return ii, errors
     #set_trace()
     #print(model.layers)
@@ -69,9 +76,6 @@ def tester(model):
 
 def visualizer(ii, errors):
     # generate plot of errors over each epoch
-    plot_num = 4
-    image_loc = "plots/loss_plot_" + str(plot_num) + ".png"
-    text_loc = "plots/loss_plot_" + str(plot_num) + ".txt"
     plt.plot(ii, errors)
     plt.title("Cross Entropy Loss over 1 Epoch for every 1000 Batches")
     plt.xlabel("Number of Batches (Size = 1)")
@@ -100,7 +104,7 @@ def main():
     trainer(model, loss)
     print("Starting testing now")
     # set_trace()
-    trained_model = torch.load('mlp-arch/model-4.pt')
+    trained_model = torch.load(file)
     tester(trained_model)
     #visualizer(ii, errors)
 

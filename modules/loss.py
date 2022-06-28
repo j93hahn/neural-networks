@@ -1,4 +1,5 @@
 import numpy as np
+from pudb import set_trace
 
 
 class CrossEntropyLoss(object):
@@ -6,14 +7,13 @@ class CrossEntropyLoss(object):
         return
 
     def loss(self, _input, _labels):
-        self._input = _input
-        self._log = np.log(self._input)
+        self._log = np.log(_input)
         self._loss = -np.sum(self._log * _labels)
         return self._loss
 
     def backward(self, _input, _labels):
-        self._grad = _labels - _input
-        return self._grad
+        #set_trace()
+        return _labels - _input
 
     def type(self):
         return "Cross Entropy Loss"

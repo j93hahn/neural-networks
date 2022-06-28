@@ -29,6 +29,7 @@ class Sequential(Module):
         self._gradPrevArray = [0] * (self.size() + 1)
         self._gradPrevArray[self.size()] = _gradPrev
         for i in reversed(range(self.size())):
+            # think about the adjoint state
             self._gradPrevArray[i] = self.layers[i].backward(self._gradPrevArray[i + 1])
 
     def update_params(self, alpha_scheduler): # update_params parameters here

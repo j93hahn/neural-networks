@@ -52,7 +52,7 @@ class TestCriterion(object):
         return self._gradInput
 
 
-def test_model(model):
+def test_relative_error(model):
 
     model.eval()
 
@@ -70,12 +70,12 @@ def test_model(model):
 def main():
     model = m.Linear(10, 10)
     print("testing Linear layer")
-    test_model(model)
+    test_relative_error(model)
 
 
     model = m.ReLU()
     print("testing ReLU layer")
-    test_model(model)
+    test_relative_error(model)
 
 
     model = m.Sequential(
@@ -84,7 +84,7 @@ def main():
         m.Linear(10, 10)
     )
     print("testing two layer model")
-    test_model(model)
+    test_relative_error(model)
 
 
 if __name__ == '__main__':

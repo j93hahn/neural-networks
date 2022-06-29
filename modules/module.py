@@ -5,7 +5,7 @@ class Module():
     def forward(self, _input):
         pass
 
-    def backward(self, _gradPrev):
+    def backward(self, _input, _gradPrev):
         pass
         """
         _gradPrev is the gradient/delta of the previous layer in the Sequential
@@ -16,6 +16,12 @@ class Module():
         """
 
     def update_params(self, time):
+        pass
+
+    def params(self):
+        """
+        Return the parameters and their gradients
+        """
         pass
 
     def train(self):

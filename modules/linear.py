@@ -9,7 +9,11 @@ class Linear(Module):
 
         # Gaussian distribution initialization
         self.weights = np.random.normal(0, 1 / input_dim, (input_dim, output_dim))
-        self.biases = np.random.normal(0, 1, (1, output_dim))
+        self.biases = np.random.normal(0, 1, output_dim)
+
+        # Kaiming He initialization
+        #self.weights = np.random.randn(input_dim, output_dim) * np.sqrt(2 / input_dim)
+        #self.biases = np.zeros((1, output_dim))
 
         # Fan in and fan out from pytorch - look at derivation/source code
         # look at Kaiming He initialization and why it's used
@@ -30,16 +34,19 @@ class Linear(Module):
 
     def forward(self, _input):
         self._input = _input
-        self._output = np.dot(self.weights.T, self._input) + self.biases.T
+        self._output = np.dot(self._input, self.weights) + self.biases
         return self._output
 
-    def backward(self, _gradPrev):
+    def backward(self, _input, _gradPrev):
         #compute gradients here
-        self.gradWeights = np.dot(self._input, _gradPrev.T)
-        self.gradBiases = np.sum(_gradPrev.T, axis=0, keepdims=True)
+        self.gradWeights = _input.T.dot(_gradPrev)
+        self.gradBiases = _gradPrev.sum(axis = 0)
+        #self.gradWeights = np.dot(self._input, _gradPrev.T)
+        #self.gradBiases = np.sum(_gradPrev.T, axis=0, keepdims=True)
 
         # pass gradient to next layer in backward propagation
-        return np.dot(self.weights, _gradPrev)
+        return _gradPrev.dot(self.weights.T)
+        #return np.dot(self.weights, _gradPrev)
 
     def update_params(self, time):
         # gradient descent without Adam optimization
@@ -62,6 +69,9 @@ class Linear(Module):
         #self.weights -= ((self._alpha * m_dw_hat) / (np.sqrt(v_dw_hat) + self._eps)).T
         #self.biases -= ((self._alpha * m_db_hat) / (np.sqrt(v_db_hat) + self._eps))
 
+    def params(self):
+        return [self.weights, self.biases], [self.gradWeights, self.gradBiases]
+
     def type(self):
         return "Linear Layer"
 
@@ -77,11 +87,14 @@ class Dropout(Module):
         self._output *= self._distribution
         return self._output
 
-    def backward(self, _gradPrev):
+    def backward(self, _input, _gradPrev):
         # scale the backwards pass by the same amount
         self._gradCurr = _gradPrev
         self._gradCurr *= self._distribution
         return self._gradCurr
+
+    def params(self):
+        return None, None
 
     def type(self):
         return "Dropout Layer"

@@ -12,9 +12,12 @@ class ReLU(Module):
         self._mask = _input > 0
         return np.maximum(0, _input)
 
-    def backward(self, _gradPrev):
+    def backward(self, _input, _gradPrev):
         # input and output vectors have same dimension
         return _gradPrev * self._mask
+
+    def params(self):
+        return None, None
 
     def type(self):
         return "ReLU Activation"
@@ -64,6 +67,9 @@ class SoftMax(Module):
         # _gradPrev has shape 10
         # return _gradPrev * self._mask
         # return np.diag(np.squeeze(self._mask)).dot(_gradPrev)
+
+    def params(self):
+        return None, None
 
     def type(self):
         return "SoftMax Activation"

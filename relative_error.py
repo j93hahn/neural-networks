@@ -3,6 +3,11 @@ import modules as m
 from data_loaders import mnist
 
 
+"""
+This file is used to test the relative errors of gradient descent
+"""
+
+
 def relative_error(x, y, h):
     h = h or 1e-12
     if type(x) is np.ndarray and type(y) is np.ndarray:
@@ -52,6 +57,7 @@ class TestCriterion(object):
         return self._gradInput
 
 
+# relative errors should be on the order of 1e-6 or smaller
 def test_relative_error(model):
 
     model.eval()

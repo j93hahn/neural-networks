@@ -41,7 +41,7 @@ class SoftMaxLoss(object):
     def __init__(self) -> None:
         """
         Combines softmax activation with cross entropy loss (negative log likelihood
-        loss) in order to provide ease with gradient descent
+        loss - NLLLoss) in order to provide ease with gradient descent
 
         Input vector size: N x C
         Labels size: N x C, one-hot encoded
@@ -55,6 +55,7 @@ class SoftMaxLoss(object):
         Backward Steps:
         1. The derivative is simply -1 * (_labels - exp(self._loglikelihood))
         2. The math works out very nicely, it's a very simple derivation
+        Shape of tensor: N x C
 
         Short Note: We need the [:, np.newaxis] to account for the dimensionality
         of the input space
@@ -63,12 +64,12 @@ class SoftMaxLoss(object):
 
     def forward(self, _input, _labels):
         _softmax = _input - _input.max(axis=1)[:, np.newaxis]
-        self._loglikelihood = self._input - np.log(np.sum(np.exp(_softmax)), axis=1)[:, np.newaxis]
+        self._loglikelihood = _softmax - np.log(np.sum(np.exp(_softmax), axis=1))[:, np.newaxis]
         _sums = np.sum(-self._loglikelihood * _labels, axis=1) # generate a N x 1 vector
         return np.mean(_sums) # generate averaged log loss for all N samples
 
-    def backward(self, _input, _labels):
-        return np.exp(self._loglikelihood - _labels)
+    def backward(self, _labels):
+        return (np.exp(self._loglikelihood) - _labels)
 
     def type(self):
         return "Softmax Log Loss"

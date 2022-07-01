@@ -9,6 +9,7 @@ class ReLU(Module):
         return
 
     def forward(self, _input):
+        # _input has shape NxF, self._mask has shape NxF
         self._mask = _input > 0
         return np.maximum(0, _input)
 
@@ -57,7 +58,7 @@ class SoftMax(Module):
         return self._output
         # self._mask = _output * (1 - _output)
 
-    def backward(self, _gradPrev):
+    def backward(self, _input, _gradPrev):
         #set_trace()
         _ij = np.diag(np.squeeze(self._output)) # n by n
 

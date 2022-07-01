@@ -4,12 +4,16 @@ from pudb import set_trace
 
 
 class Linear(Module):
-    def __init__(self, input_dim, output_dim) -> None:
+    def __init__(self, in_features, out_features) -> None:
         super().__init__()
 
         # Gaussian distribution initialization
-        self.weights = np.random.normal(0, 1 / input_dim, (input_dim, output_dim))
-        self.biases = np.random.normal(0, 1, output_dim)
+        self.weights = np.random.normal(0, 1 / in_features, (out_features, in_features))
+        self.biases = np.random.normal(0, 1, out_features)
+
+        # PyTorch implementation
+        #self.weights = np.random.normal(-np.sqrt(1/in_features), np.sqrt(1/in_features), (out_features, in_features))
+        #self.biases = np.random.normal(-np.sqrt(1/in_features), np.sqrt(1/in_features), out_features)
 
         # Kaiming He initialization
         #self.weights = np.random.randn(input_dim, output_dim) * np.sqrt(2 / input_dim)
@@ -33,26 +37,39 @@ class Linear(Module):
         #self.m_db, self.v_db = 0, 0 # gradients w.r.t. to the biases
 
     def forward(self, _input):
-        self._input = _input
-        self._output = np.dot(self._input, self.weights) + self.biases
-        return self._output
+        # input is NxF where F is number of in features, and N is number of data samples
+        return np.dot(_input, self.weights.T) + self.biases
 
     def backward(self, _input, _gradPrev):
-        #compute gradients here
-        self.gradWeights = _input.T.dot(_gradPrev)
-        self.gradBiases = _gradPrev.sum(axis = 0)
+        # compute gradients here
+        """
+        _gradPrev has shape N x out_features
+
+        Assume dL/dY has already been computed, a.k.a. _gradPrev
+        dL/dX = dL/dY * W.T
+        dL/dW = _input.T * dL/dY
+        dL/dB =
+        """
+        #set_trace()
+        _gradCurr = np.dot(_gradPrev, self.weights)
+        self.gradWeights = _gradPrev.T.dot(_input) / _input.shape[0]
+        self.gradBiases = np.sum(_gradPrev, axis=0) / _input.shape[0]
+
+        #set_trace()
+        alpha=0.1
+        self.weights -= (alpha * self.gradWeights)
+        self.biases -= (alpha * self.gradBiases)
         #self.gradWeights = np.dot(self._input, _gradPrev.T)
         #self.gradBiases = np.sum(_gradPrev.T, axis=0, keepdims=True)
 
         # pass gradient to next layer in backward propagation
-        return _gradPrev.dot(self.weights.T)
-        #return np.dot(self.weights, _gradPrev)
+        return _gradCurr
 
     def update_params(self, time):
         # gradient descent without Adam optimization
         alpha = 0.1
-        self.weights -= (alpha * self.gradWeights)
-        self.biases -= (alpha * self.gradBiases)
+        #self.weights -= (alpha * self.gradWeights)
+        #self.biases -= (alpha * self.gradBiases)
 
         # gradient descent with Adam optimization
         #self.m_dw = self._b1 * self.m_dw + (1 - self._b1) * self.gradWeights

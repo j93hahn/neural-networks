@@ -15,9 +15,6 @@ class Module():
             passes it to the next layer in the sequence
         """
 
-    def update_params(self, time):
-        pass
-
     def params(self):
         """
         Return the parameters and their gradients

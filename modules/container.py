@@ -29,11 +29,6 @@ class Sequential(Module):
         self._adjoint = self._gradPrevArray[0]
         return self._adjoint
 
-    def update_params(self, alpha_scheduler): # update_params parameters here
-        alpha = 0.01 # eventually, implement a scheduler
-        for i in range(self.size()):
-            self.layers[i].update_params(alpha)
-
     def params(self):
         param = []
         grad = []

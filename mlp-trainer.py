@@ -10,7 +10,7 @@ import matplotlib
 
 
 # define up here
-model_number = "9"
+model_number = "10"
 file = "mlp-arch/model-" + model_number + ".pt"
 image_loc = "plots/loss_plot_" + model_number + ".png"
 grad1_loc = "plots/weight_grad_plot_" + model_number + ".png"
@@ -24,7 +24,7 @@ def trainer(model, loss, optimizer, grad_type="Mini-Batch"):
     model.train()
 
     if grad_type == "Mini-Batch":
-        epochs = 10
+        epochs = 25
         batch_size = 100
         T = int(train_data.shape[0]/batch_size)
         ii = np.arange(0, T)

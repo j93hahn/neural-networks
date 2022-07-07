@@ -17,14 +17,21 @@ class Optimizer(object):
         # conduct optimization step - varies based on the optimizer
         pass
 
+    def state_dict(self):
+        return self.params, self.gradParams
+
+    def add_param_group(self, param_group):
+        self.params.append(param_group[0])
+        self.gradParams.append(param_group[1])
+
 
 class SGDM(Optimizer):
     # Stochastic Gradient Descent with Momentum
-    def __init__(self, params: List[list]):
+    def __init__(self, params: List[list], alpha=0.1):
         super().__init__(params)
-        self._alpha = 0.01
+        self.alpha = alpha
 
     def step(self):
         for i in range(len(self.params)):
             for j in range(len(self.params[i])):
-                self.params[i][j] -= self._alpha * self.gradParams[i][j]
+                self.params[i][j] -= self.alpha * self.gradParams[i][j]

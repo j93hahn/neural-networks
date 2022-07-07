@@ -10,7 +10,7 @@ import matplotlib
 
 
 # define up here
-model_number = "10"
+model_number = "11"
 file = "mlp-arch/model-" + model_number + ".pt"
 image_loc = "plots/loss_plot_" + model_number + ".png"
 grad1_loc = "plots/weight_grad_plot_" + model_number + ".png"
@@ -18,13 +18,13 @@ grad2_loc = "plots/bias_grad_plot_" + model_number + ".png"
 text_loc = "plots/loss_plot_" + model_number + ".txt"
 
 
-def trainer(model, loss, optimizer, grad_type="Mini-Batch"):
+def trainer(model, loss, optimizer, scheduler, grad_type="Mini-Batch"):
     train_data = mnist.train_images
     train_labels = mnist.train_labels
     model.train()
 
     if grad_type == "Mini-Batch":
-        epochs = 25
+        epochs = 45
         batch_size = 100
         T = int(train_data.shape[0]/batch_size)
         ii = np.arange(0, T)
@@ -43,7 +43,7 @@ def trainer(model, loss, optimizer, grad_type="Mini-Batch"):
                 lower = 0 + batch_size*t
                 upper = batch_size + batch_size*t
 
-                # now perform batch gradient descent
+                # now perform mini-batch gradient descent
                 curr_batch_data = _data[lower:upper, :]
                 curr_batch_labels = _labels[lower:upper]
                 prediction = model.forward(curr_batch_data / 255)
@@ -54,6 +54,7 @@ def trainer(model, loss, optimizer, grad_type="Mini-Batch"):
                 errors[t] += error #np.minimum(1000, error)
                 model.backward(prediction, loss.backward(actual))
                 optimizer.step()
+            scheduler.step()
     elif grad_type == "SGD":
         epochs = 1
         T = 100000
@@ -127,17 +128,20 @@ def visualizer(x, y, grad=False, layer=0):
 
 
 def main():
-    #model = m.Linear(784, 10)
     model = m.Sequential(
-        m.Linear(784, 16),
-        m.ReLU(),
-        m.Linear(16, 10)
+        m.Linear(784, 10)
     )
+    #model = m.Sequential(
+    #    m.Linear(784, 16),
+    #    m.ReLU(),
+    #    m.Linear(16, 10)
+    #)
 
     loss = m.SoftMaxLoss()
 
     optimizer = o.SGDM(model.params())
-    ii, errors = trainer(model, loss, optimizer, "Mini-Batch")
+    scheduler = o.lr_scheduler(optimizer, step_size=15)
+    ii, errors = trainer(model, loss, optimizer, scheduler, "Mini-Batch")
     print("Training successfully completed, now beginning testing...")
 
     trained_model = torch.load(file)

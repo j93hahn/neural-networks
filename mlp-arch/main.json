@@ -1,0 +1,12 @@
+{
+    "model1": {
+        "data type": "normalized MNIST data",
+        "test success rate": 90.05,
+        "optimizer": "SGDM"
+    },
+    "model2": {
+        "data type": "non-normalized MNIST data",
+        "test success rate": 11.35,
+        "optimizer": "SGDM"
+    }
+}

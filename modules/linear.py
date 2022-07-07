@@ -39,6 +39,7 @@ class Linear(Module):
         dL/dW = _input.T * dL/dY
         dL/dB = sum(dL/dY, axis=0)
         """
+        #self.gradWeights.fill(0)
         _gradCurr = np.dot(_gradPrev, self.weights)
         self.gradWeights = _gradPrev.T.dot(_input) / _input.shape[0]
         self.gradBiases = np.sum(_gradPrev, axis=0) / _input.shape[0]
@@ -50,7 +51,7 @@ class Linear(Module):
         return _gradCurr
 
     def params(self):
-        return [self.weights, self.biases], [self.gradWeights, self.gradBiases]
+        return self.weights, self.biases, self.gradWeights, self.gradBiases
 
     def type(self):
         return "Linear Layer"

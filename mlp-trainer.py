@@ -9,9 +9,11 @@ import matplotlib
 
 
 # define up here
-model_number = "6"
+model_number = "7"
 file = "mlp-arch/model-" + model_number + ".pt"
 image_loc = "plots/loss_plot_" + model_number + ".png"
+grad1_loc = "plots/weight_grad_plot_" + model_number + ".png"
+grad2_loc = "plots/bias_grad_plot_" + model_number + ".png"
 text_loc = "plots/loss_plot_" + model_number + ".txt"
 
 
@@ -54,10 +56,11 @@ def trainer(model, loss, grad_type="Mini-Batch"):
         T = 100000
         ii = np.arange(0, T)
         errors = np.zeros(T, dtype=np.float64)
+        weights = []; biases = []
+        gWeights = []; gBiases = []
         for e in range(epochs):
             print("-- Beginning Training Epoch " + str(e + 1) + " --")
             for t in tqdm(range(T)):
-                breakpoint()
                 j = np.random.randint(0, train_data.shape[0])
                 prediction = model.forward(train_data[j][np.newaxis, :] / 255)
                 actual = np.zeros((1, 10))
@@ -65,6 +68,7 @@ def trainer(model, loss, grad_type="Mini-Batch"):
                 error = loss.forward(prediction, actual)
                 errors[t] += error
                 model.backward(prediction, loss.backward(actual))
+                # params = model.parameters()
                 # optimizer.step(t + 1)
     elif grad_type == "Batch":
         ...
@@ -89,22 +93,39 @@ def tester(model):
     print("Test success rate: " + str(count / 100) + "%")
 
 
-def visualizer(ii, errors):
+def visualizer(x, y, grad=False, layer=0):
     # generate plot of errors over each epoch
-    plt.plot(ii, errors)
-    plt.title("Cross Entropy Loss over 1 Epoch for every 1000 Batches")
-    plt.xlabel("Number of Batches (Size = 1)")
-    plt.ylabel("Cross Entropy Loss for each Example")
-    plt.savefig(image_loc)
-    plt.show()
-    with open(text_loc, 'w') as f:
-        f.close()
-    print("Maximum loss: ", np.max(errors))
+    if not grad:
+        plt.plot(x, y)
+        plt.title("Cross Entropy Loss over 1 Epoch for every 1000 Batches")
+        plt.xlabel("Number of Batches (Size = 1)")
+        plt.ylabel("Cross Entropy Loss for each Example")
+        plt.savefig(image_loc)
+        plt.show()
+        with open(text_loc, 'w') as f:
+            f.close()
+    else:
+        print("Visualizing Gradient Weight Distribution for Layer " + str(layer))
+        fig, axs = plt.subplots(2, 1)
+        axs[0].hist(x[layer].reshape((-1, 1)).squeeze(), bins=100, density=True, stacked=True)
+        weight_mean = np.mean(x[layer].reshape((-1, 1)).squeeze())
+        weight_std = np.std(x[layer].reshape((-1, 1)).squeeze())
+        axs[1].hist(y[layer], bins=25, stacked=True, density=True)
+        bias_mean = np.mean(y[layer])
+        bias_std = np.std(y[layer])
+        axs[0].set_title("Gradient Weight Distributions, Normalized Input for Layer " + str(layer))
+        axs[0].set_xlabel("Gradient Weight Distribution")
+        axs[1].set_title("Gradient Bias Distributions, Normalized Input for Layer " + str(layer))
+        axs[1].set_xlabel("Gradient Bias Distribution")
+        fig.savefig(grad1_loc)
+        print("Gradient Weights Mean & STD: " + str(weight_mean) + ", " + str(weight_std))
+        print("Gradient Biases Mean & STD: " + str(bias_mean) + ", " + str(bias_std))
+        plt.show()
 
 
 def main():
     #model = m.Linear(784, 10)
-    model = m.Sequential(
+    """model = m.Sequential(
         m.Linear(784, 16),
         m.ReLU(),
         m.Linear(16, 10)
@@ -112,11 +133,19 @@ def main():
 
     loss = m.SoftMaxLoss()
     ii, errors = trainer(model, loss, "SGD")
-    print("Training successfully completed, now beginning testing...")
+    print("Training successfully completed, now beginning testing...")"""
 
     trained_model = torch.load(file)
-    tester(trained_model)
-    visualizer(ii, errors)
+    #tester(trained_model)
+    #print("Maximum loss: ", np.max(errors))
+
+    _, _, gWeights, gBiases = trained_model.params()
+
+    #print("Visualizing Cross Entropy Loss Distribution")
+    #visualizer(x=ii, y=errors, grad=False)
+    #breakpoint()
+    visualizer(x=np.array(gWeights, dtype=object), y=np.array(gBiases, dtype=object), grad=True, layer=1)
+
 
 
 if __name__ == '__main__':

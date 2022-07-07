@@ -1,12 +1,18 @@
 {
-    "model1": {
+    "model-5": {
         "data type": "normalized MNIST data",
         "test success rate": 90.05,
         "optimizer": "SGDM"
     },
-    "model2": {
+    "model-6": {
         "data type": "non-normalized MNIST data",
         "test success rate": 11.35,
         "optimizer": "SGDM"
+    },
+    "model-11": {
+        "data type": "normalized MNIST data",
+        "test success rate": 92.36,
+        "optimizer": "SGDM",
+        "extra info": "Implemented a learning rate scheduler, with a decay of 0.1"
     }
 }

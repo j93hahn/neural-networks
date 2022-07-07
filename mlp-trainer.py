@@ -24,11 +24,11 @@ def trainer(model, loss, optimizer, grad_type="Mini-Batch"):
     model.train()
 
     if grad_type == "Mini-Batch":
-        epochs = 25
+        epochs = 10
         batch_size = 100
         T = int(train_data.shape[0]/batch_size)
         ii = np.arange(0, T)
-        errors = np.zeros(T, dtype=np.int64)
+        errors = np.zeros(T, dtype=np.float64)
 
         for e in range(epochs):
             # shuffle the data for every epoch
@@ -38,6 +38,7 @@ def trainer(model, loss, optimizer, grad_type="Mini-Batch"):
             _labels = train_labels[permute]
             print("-- Beginning Training Epoch " + str(e + 1) + " --")
             for t in tqdm(range(T)):
+                optimizer.zero_grad()
                 # divide dataset into batches
                 lower = 0 + batch_size*t
                 upper = batch_size + batch_size*t
@@ -45,13 +46,14 @@ def trainer(model, loss, optimizer, grad_type="Mini-Batch"):
                 # now perform batch gradient descent
                 curr_batch_data = _data[lower:upper, :]
                 curr_batch_labels = _labels[lower:upper]
-                prediction = model.forward(curr_batch_data)
+                prediction = model.forward(curr_batch_data / 255)
                 actual = np.zeros((batch_size, 10))
                 actual[np.arange(0, batch_size), curr_batch_labels] = 1 # NumPy advanced indexing - produce one-hot encodings
 
                 error = loss.forward(prediction, actual)
-                errors[t] += np.minimum(1000, error)
+                errors[t] += error #np.minimum(1000, error)
                 model.backward(prediction, loss.backward(actual))
+                optimizer.step()
     elif grad_type == "SGD":
         epochs = 1
         T = 100000
@@ -134,9 +136,8 @@ def main():
 
     loss = m.SoftMaxLoss()
 
-    optimizer = o.Standard(model.params())
-    #optimizer = o.Adam(model.params())
-    ii, errors = trainer(model, loss, optimizer, "SGD")
+    optimizer = o.SGDM(model.params())
+    ii, errors = trainer(model, loss, optimizer, "Mini-Batch")
     print("Training successfully completed, now beginning testing...")
 
     trained_model = torch.load(file)

@@ -36,6 +36,9 @@ class BatchNorm(Module):
         self._gradCurr = ...
         return self._gradCurr
 
+    def params(self):
+        return [], []
+
     def update_params(self, time):
         alpha = 0.01
         self._B -= alpha * self.l_dB

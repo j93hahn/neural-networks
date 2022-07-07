@@ -18,7 +18,8 @@ class Optimizer(object):
         pass
 
 
-class Standard(Optimizer):
+class SGDM(Optimizer):
+    # Stochastic Gradient Descent with Momentum
     def __init__(self, params: List[list]):
         super().__init__(params)
         self._alpha = 0.01

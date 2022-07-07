@@ -8,18 +8,6 @@ from tqdm import tqdm
 import matplotlib
 
 
-model = m.Sequential(
-    m.Linear(784, 16),
-    m.ReLU(),
-    m.Linear(16, 10)
-)
-
-loss = m.SoftMaxLoss()
-
-
-optimizer = m.Adam()
-
-
 # define up here
 model_number = "5"
 file = "mlp-arch/model-" + model_number + ".pt"
@@ -59,18 +47,19 @@ def trainer(model, loss, grad_type="Mini-Batch"):
                 actual[np.arange(0, batch_size), curr_batch_labels] = 1 # NumPy advanced indexing - produce one-hot encodings
 
                 error = loss.forward(prediction, actual)
-                errors[t] += error # np.minimum(5, error)
+                errors[t] += np.minimum(1000, error)
                 model.backward(prediction, loss.backward(actual))
     elif grad_type == "SGD":
         epochs = 1
         T = 100000
         ii = np.arange(0, T)
-        errors = np.zeros(T, dtype=np.int64)
+        errors = np.zeros(T, dtype=np.float64)
         for e in range(epochs):
             print("-- Beginning Training Epoch " + str(e + 1) + " --")
             for t in tqdm(range(T)):
+                breakpoint()
                 j = np.random.randint(0, train_data.shape[0])
-                prediction = model.forward(train_data[j][np.newaxis, :])
+                prediction = model.forward(train_data[j][np.newaxis, :] / 255)
                 actual = np.zeros((1, 10))
                 actual[0, train_labels[j]] = 1
                 error = loss.forward(prediction, actual)
@@ -83,7 +72,7 @@ def trainer(model, loss, grad_type="Mini-Batch"):
         raise Exception("Invalid Gradient Descent Type")
 
     errors = errors / epochs #average errors loss
-    #torch.save(model, file)
+    torch.save(model, file)
     return ii, errors
 
 
@@ -93,7 +82,7 @@ def tester(model):
     iterations = int(mnist.test_images.shape[0])
     count = 0
     for i in tqdm(range(iterations)):
-        prediction = model.forward(mnist.test_images[i][np.newaxis, :])
+        prediction = model.forward(mnist.test_images[i][np.newaxis, :] / 255)
 
         if np.argmax(prediction) == mnist.test_labels[i]:
             count += 1
@@ -114,11 +103,19 @@ def visualizer(ii, errors):
 
 
 def main():
+    #model = m.Linear(784, 10)
+    model = m.Sequential(
+        m.Linear(784, 16),
+        m.ReLU(),
+        m.Linear(16, 10)
+    )
+
+    loss = m.SoftMaxLoss()
     ii, errors = trainer(model, loss, "SGD")
     print("Training successfully completed, now beginning testing...")
 
-    #trained_model = torch.load(file)
-    tester(model)
+    trained_model = torch.load(file)
+    tester(trained_model)
     visualizer(ii, errors)
 
 

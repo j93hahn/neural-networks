@@ -1,0 +1,9 @@
+alpha: 0.1
+success rate on test set: 1
+backprop: SGD
+epochs: 1
+dataset: MNIST, training set
+batch size: 1
+
+notes: incorporated one Dropout layer, didn't seem to boost model learning
+        capacity

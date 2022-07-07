@@ -69,7 +69,7 @@ class SoftMaxLoss(object):
         return np.mean(_sums) # generate averaged log loss for all N samples
 
     def backward(self, _labels):
-        return (np.exp(self._loglikelihood) - _labels)
+        return (np.exp(self._loglikelihood) - _labels) # / _labels.shape[0]
 
     def type(self):
         return "Softmax Log Loss"

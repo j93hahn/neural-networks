@@ -13,6 +13,12 @@
         "data type": "normalized MNIST data",
         "test success rate": 92.36,
         "optimizer": "SGDM",
-        "extra info": "Implemented a learning rate scheduler, with a decay of 0.1"
+        "extra info": "Implemented a learning rate scheduler, with a decay of 0.1 -- Linear layer only"
+    },
+    "model-12": {
+        "data type": "normalized MNIST data",
+        "test success rate": 93.34,
+        "optimizer": "SGDM",
+        "extra info": "Implemented a learning rate scheduler, with a decay of 0.1 -- full neural network"
     }
 }

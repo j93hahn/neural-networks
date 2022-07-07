@@ -10,7 +10,7 @@ import matplotlib
 
 
 # define up here
-model_number = "11"
+model_number = "12"
 file = "mlp-arch/model-" + model_number + ".pt"
 image_loc = "plots/loss_plot_" + model_number + ".png"
 grad1_loc = "plots/weight_grad_plot_" + model_number + ".png"
@@ -128,14 +128,14 @@ def visualizer(x, y, grad=False, layer=0):
 
 
 def main():
-    model = m.Sequential(
-        m.Linear(784, 10)
-    )
     #model = m.Sequential(
-    #    m.Linear(784, 16),
-    #    m.ReLU(),
-    #    m.Linear(16, 10)
+    #    m.Linear(784, 10)
     #)
+    model = m.Sequential(
+        m.Linear(784, 16),
+        m.ReLU(),
+        m.Linear(16, 10)
+    )
 
     loss = m.SoftMaxLoss()
 

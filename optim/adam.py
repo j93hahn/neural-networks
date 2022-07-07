@@ -1,14 +1,7 @@
-from typing import List
 import numpy as np
-from pudb import set_trace
+from optimizer import Optimizer
 
 
-class Optimizer(object):
-    def __init__(self, *params: List):
-        self.group_params = [*params]
-
-
-# Adam optimizer
 class Adam(Optimizer):
     def __init__(self, a=0.01, betas=[0.9, 0.999], eps=1e-8) -> None:
         super().__init__()

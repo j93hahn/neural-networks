@@ -10,7 +10,7 @@ import matplotlib
 
 
 # define up here
-model_number = "8"
+model_number = "9"
 file = "mlp-arch/model-" + model_number + ".pt"
 image_loc = "plots/loss_plot_" + model_number + ".png"
 grad1_loc = "plots/weight_grad_plot_" + model_number + ".png"
@@ -57,8 +57,6 @@ def trainer(model, loss, optimizer, grad_type="Mini-Batch"):
         T = 100000
         ii = np.arange(0, T)
         errors = np.zeros(T, dtype=np.float64)
-        weights = []; biases = []
-        gWeights = []; gBiases = []
         for e in range(epochs):
             print("-- Beginning Training Epoch " + str(e + 1) + " --")
             for t in tqdm(range(T)):
@@ -70,9 +68,9 @@ def trainer(model, loss, optimizer, grad_type="Mini-Batch"):
                 error = loss.forward(prediction, actual)
                 errors[t] += error
                 model.backward(prediction, loss.backward(actual))
-                optimizer.step()
-                # params = model.parameters()
-                # optimizer.step(t + 1)
+                optimizer.step() # Standard optimizer
+                #breakpoint()
+                #optimizer.step(t + 1) # Adam optimizer
     elif grad_type == "Batch":
         ...
     else:
@@ -137,6 +135,7 @@ def main():
     loss = m.SoftMaxLoss()
 
     optimizer = o.Standard(model.params())
+    #optimizer = o.Adam(model.params())
     ii, errors = trainer(model, loss, optimizer, "SGD")
     print("Training successfully completed, now beginning testing...")
 

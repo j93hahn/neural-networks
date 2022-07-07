@@ -1,14 +1,15 @@
 import numpy as np
 from .optimizer import Optimizer
+from typing import List
 
 
 class Adam(Optimizer):
-    def __init__(self, a=0.01, betas=[0.9, 0.999], eps=1e-8) -> None:
-        super().__init__()
-        self._alpha = a
-        self._b1 = betas[0]
-        self._b2 = betas[1]
-        self._eps = eps
+    def __init__(self, params: List[list]) -> None:
+        super().__init__(params)
+        self._alpha = 0.01
+        self._b1 = 0.9
+        self._b2 = 0.999
+        self._eps = 1e-8
         # initialize derivatives of mean and variance w.r.t weights, biases
         self.m_dw, self.v_dw = 0, 0
         self.m_db, self.v_db = 0, 0

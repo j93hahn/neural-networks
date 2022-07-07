@@ -9,7 +9,7 @@ import matplotlib
 
 
 # define up here
-model_number = "5"
+model_number = "6"
 file = "mlp-arch/model-" + model_number + ".pt"
 image_loc = "plots/loss_plot_" + model_number + ".png"
 text_loc = "plots/loss_plot_" + model_number + ".txt"

@@ -6,10 +6,9 @@ from .loss import CrossEntropyLoss, MSELoss, SoftMaxLoss
 from .conv import Conv2d, MaxPool
 from .transformer import Transformer
 from .batchnorm import BatchNorm
-from .optimizer import Adam
 
 __all__ = [
     'Module', 'Linear', 'Sequential', 'ReLU', 'SoftMax', 'CrossEntropyLoss',
     'Conv2d', 'MaxPool', 'Transformer', 'Sigmoid', 'MSELoss', 'Dropout',
-    'BatchNorm', 'SoftMaxLoss', 'Adam'
+    'BatchNorm', 'SoftMaxLoss'
 ]

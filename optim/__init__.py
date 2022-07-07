@@ -1,6 +1,6 @@
-from optimizer import Optimizer
-from adam import Adam
+from .optimizer import Optimizer, Standard
+from .adam import Adam
 
 __all__ = [
-    'Optimizer', 'Adam'
+    'Optimizer', 'Adam', 'Standard'
 ]

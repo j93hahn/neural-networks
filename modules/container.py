@@ -30,16 +30,14 @@ class Sequential(Module):
         return self._adjoint
 
     def params(self):
-        weights = []; biases = []
-        gWeights = []; gBiases = []
+        params = []
+        gradParams = []
         for layer in self.layers:
-            _w, _b, _gw, _gb = layer.params()
-            if _w is not None:
-                weights.append(_w)
-                biases.append(_b)
-                gWeights.append(_gw)
-                gBiases.append(_gb)
-        return weights, biases, gWeights, gBiases
+            _p, _g = layer.params()
+            if _p is not None:
+                params.append(_p)
+                gradParams.append(_g)
+        return params, gradParams
 
     def train(self):
         self.train

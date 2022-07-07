@@ -18,7 +18,7 @@ class ReLU(Module):
         return _gradPrev * self._mask
 
     def params(self):
-        return None, None, None, None
+        return None, None
 
     def type(self):
         return "ReLU Activation"

@@ -5,11 +5,12 @@ from pudb import set_trace
 import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import optim as o
 import matplotlib
 
 
 # define up here
-model_number = "7"
+model_number = "8"
 file = "mlp-arch/model-" + model_number + ".pt"
 image_loc = "plots/loss_plot_" + model_number + ".png"
 grad1_loc = "plots/weight_grad_plot_" + model_number + ".png"
@@ -17,7 +18,7 @@ grad2_loc = "plots/bias_grad_plot_" + model_number + ".png"
 text_loc = "plots/loss_plot_" + model_number + ".txt"
 
 
-def trainer(model, loss, grad_type="Mini-Batch"):
+def trainer(model, loss, optimizer, grad_type="Mini-Batch"):
     train_data = mnist.train_images
     train_labels = mnist.train_labels
     model.train()
@@ -61,6 +62,7 @@ def trainer(model, loss, grad_type="Mini-Batch"):
         for e in range(epochs):
             print("-- Beginning Training Epoch " + str(e + 1) + " --")
             for t in tqdm(range(T)):
+                optimizer.zero_grad()
                 j = np.random.randint(0, train_data.shape[0])
                 prediction = model.forward(train_data[j][np.newaxis, :] / 255)
                 actual = np.zeros((1, 10))
@@ -68,6 +70,7 @@ def trainer(model, loss, grad_type="Mini-Batch"):
                 error = loss.forward(prediction, actual)
                 errors[t] += error
                 model.backward(prediction, loss.backward(actual))
+                optimizer.step()
                 # params = model.parameters()
                 # optimizer.step(t + 1)
     elif grad_type == "Batch":
@@ -125,26 +128,28 @@ def visualizer(x, y, grad=False, layer=0):
 
 def main():
     #model = m.Linear(784, 10)
-    """model = m.Sequential(
+    model = m.Sequential(
         m.Linear(784, 16),
         m.ReLU(),
         m.Linear(16, 10)
     )
 
     loss = m.SoftMaxLoss()
-    ii, errors = trainer(model, loss, "SGD")
-    print("Training successfully completed, now beginning testing...")"""
+
+    optimizer = o.Standard(model.params())
+    ii, errors = trainer(model, loss, optimizer, "SGD")
+    print("Training successfully completed, now beginning testing...")
 
     trained_model = torch.load(file)
-    #tester(trained_model)
-    #print("Maximum loss: ", np.max(errors))
+    tester(trained_model)
+    print("Maximum loss: ", np.max(errors))
 
-    _, _, gWeights, gBiases = trained_model.params()
+    #_, _, gWeights, gBiases = trained_model.params()
 
     #print("Visualizing Cross Entropy Loss Distribution")
     #visualizer(x=ii, y=errors, grad=False)
     #breakpoint()
-    visualizer(x=np.array(gWeights, dtype=object), y=np.array(gBiases, dtype=object), grad=True, layer=1)
+    #visualizer(x=np.array(gWeights, dtype=object), y=np.array(gBiases, dtype=object), grad=True, layer=1)
 
 
 

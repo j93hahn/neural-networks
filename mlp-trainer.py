@@ -10,7 +10,7 @@ import matplotlib
 
 
 # define up here
-model_number = "12"
+model_number = "13"
 file = "mlp-arch/model-" + model_number + ".pt"
 image_loc = "plots/loss_plot_" + model_number + ".png"
 grad1_loc = "plots/weight_grad_plot_" + model_number + ".png"
@@ -134,6 +134,7 @@ def main():
     model = m.Sequential(
         m.Linear(784, 16),
         m.ReLU(),
+        #m.Dropout(), # accuracy goes down to ~58% with dropout implemented
         m.Linear(16, 10)
     )
 

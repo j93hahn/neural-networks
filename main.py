@@ -7,7 +7,7 @@ def viz():
 
 
 def main():
-    model = torch.load('model-A.pt') # load model first
+    model = torch.load('mlp-arch/model-A.pt') # load model first
     breakpoint()
     print(model.components())
 

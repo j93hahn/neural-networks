@@ -3,7 +3,7 @@ import torch
 
 
 def viz():
-    plt.savefig('mlp/plots/new.png')
+    plt.savefig('plots/new.png')
 
 
 def main():

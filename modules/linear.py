@@ -7,20 +7,33 @@ class Linear(Module):
     def __init__(self, in_features, out_features, init_method="Gaussian") -> None:
         super(Linear, self).__init__()
 
-        if init_method == "Gaussian":
-            # Gaussian initialization
+        if init_method == "Zero":
+            # Zeros initialization
+            self.weights = np.zeros((out_features, in_features))
+            self.biases = np.zeros(out_features)
+        elif init_method == "Random":
+            # Random distribution
+            self.weights = np.random.randn(out_features, in_features)
+            self.biases = np.random.randn(out_features)
+        elif init_method == "Gaussian":
+            # Gaussian normal distribution
             self.weights = np.random.normal(0, 1 / in_features, (out_features, in_features))
             self.biases = np.random.normal(0, 1, out_features)
         elif init_method == "He":
-            # He initialization
-            self.weights = np.random.randn(in_features, out_features) * np.sqrt(2 / in_features)
-            self.biases = np.zeros((1, out_features))
-        elif init_method == "PyTorch":
-            # PyTorch initialization
-            self.weights = np.random.normal(-np.sqrt(1/in_features), np.sqrt(1/in_features), (out_features, in_features))
-            self.biases = np.random.normal(-np.sqrt(1/in_features), np.sqrt(1/in_features), out_features)
+            # He initialization - https://arxiv.org/pdf/1502.01852.pdf
+            self.weights = np.random.normal(0, np.sqrt(2 / in_features), (out_features, in_features))
+            self.biases = np.zeros(out_features)
+        elif init_method == "Xavier":
+            # Xavier initialization - https://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf
+            # ideal for linear activation layers; non-ideal for non-linear activation layers (i.e., ReLU)
+            self.weights = np.random.uniform(-1/np.sqrt(in_features), 1/np.sqrt(in_features), (out_features, in_features))
+            self.biases = np.zeros(out_features)
+        elif init_method == "XavierNorm":
+            # Normalized Xavier initialization - https://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf
+            self.weights = np.random.uniform(-np.sqrt(6)/np.sqrt(in_features+out_features), np.sqrt(6)/np.sqrt(in_features+out_features), (out_features, in_features))
+            self.biases = np.zeros(out_features)
         else:
-            raise Exception("Invalid Initialization technique")
+            raise Exception("Initialization technique not recognized.")
 
         # Gradient descent initialization
         self.gradWeights = np.zeros_like(self.weights)

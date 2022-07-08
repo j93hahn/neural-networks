@@ -1,6 +1,3 @@
-import numpy as np
-
-
 """
 This decays the learning rate of each parameter group by gamma
 every step_size epochs. Modeled after PyTorch
@@ -26,6 +23,6 @@ class lr_scheduler(object):
 
     def last_lr(self): # previous learning rate for all param groups
         if len(self.lr) == 1:
-            raise ValueError("Only one learning rate installed")
+            raise Exception("A second learning rate has not yet been established.")
         else:
             return self.lr[-2]

@@ -9,7 +9,7 @@ import optim as o
 
 
 # define up here
-model_number = "14"
+model_number = "15"
 file = "mlp-arch/model-" + model_number + ".pt"
 image_loc = "plots/loss_plot_" + model_number + ".png"
 grad1_loc = "plots/weight_grad_plot_" + model_number + ".png"

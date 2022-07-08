@@ -1,6 +1,5 @@
 from .module import Module
 import numpy as np
-from pudb import set_trace
 
 
 class Linear(Module):
@@ -66,21 +65,26 @@ class Linear(Module):
 
 class Dropout(Module):
     def __init__(self, p=0.5) -> None:
+        """
+        This class is implementing "inverse dropout" which can prevent the
+        explosion or saturation of neurons. See https://bit.ly/3Ipmg12 for more info
+
+        This is preferred to scaling during test-time
+        """
         super().__init__()
-        self._p = p
+        self.p = p # probability of keeping some unit active; higher p = less dropout
 
     def forward(self, _input):
         _output = _input
-        if self._p > 0 and self.train:
-            self.mask = np.random.binomial(n=1, p=1-self._p, size=_input.shape)
-            self.mask /= (1 - self._p) # must scale down
+        if self.p > 0 and self.train:
+            self.mask = np.random.binomial(n=1, p=self.p, size=_input.shape) / self.p
             _output *= self.mask
         return _output
 
     def backward(self, _input, _gradPrev):
         # scale the backwards pass by the same amount
         _output = _gradPrev
-        if self._p > 0 and self.train:
+        if self.p > 0 and self.train:
             _output *= self.mask
         return _output
 

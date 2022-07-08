@@ -9,7 +9,7 @@ import optim as o
 
 
 # define up here
-model_number = "15"
+model_number = "16"
 file = "mlp-arch/model-" + model_number + ".pt"
 image_loc = "plots/loss_plot_" + model_number + ".png"
 grad1_loc = "plots/weight_grad_plot_" + model_number + ".png"
@@ -133,9 +133,10 @@ def main():
     model = m.Sequential(
         m.Linear(784, 100),
         m.ReLU(),
-        #m.Dropout(), # accuracy goes down to ~58% with dropout implemented
+        m.Dropout(p=0.8),
         m.Linear(100, 16),
         m.ReLU(),
+        m.Dropout(p=0.8),
         m.Linear(16, 10)
     )
 

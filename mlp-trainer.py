@@ -70,13 +70,32 @@ def trainer(model, loss, optimizer, scheduler, grad_type="Mini-Batch"):
                 error = loss.forward(prediction, actual)
                 errors[t] += error
                 model.backward(prediction, loss.backward(actual))
-                optimizer.step() # Standard optimizer
-                #breakpoint()
-                #optimizer.step(t + 1) # Adam optimizer
+                optimizer.step() # SGDM optimizer
     elif grad_type == "Batch":
-        ...
+        epochs = 45
+        for e in range(epochs):
+            # prepare data for new epoch
+            rng = np.random.default_rng()
+            permute = rng.permutation(train_data.shape[0])
+            _data = train_data[permute]
+            _labels = train_labels[permute]
+
+            # begin training epoch
+            print("-- Beginning Training Epoch " + str(e + 1) + " --")
+            optimizer.zero_grad()
+            prediction = model.forward(_data / 255)
+            actual = np.zeros((_data.shape[0], 10))
+            actual[np.arange(0, _data.shape[0]), _labels] = 1
+
+            error = loss.forward(prediction, actual)
+            model.backward(prediction, loss.backward(actual))
+
+            optimizer.step()
+            scheduler.step()
+        torch.save(model, file)
+        return 0, 1
     else:
-        raise Exception("Invalid Gradient Descent Type")
+        raise Exception("Unsupported Gradient Descent Type")
 
     errors = errors / epochs #average errors loss
     torch.save(model, file)
@@ -127,10 +146,8 @@ def visualizer(x, y, grad=False, layer=0):
 
 
 def main():
-    #model = m.Sequential(
-    #    m.Linear(784, 10)
-    #)
-    model = m.Sequential(
+    model = m.Sequential(m.Linear(784, 10)) # Linear layer implementation
+    """model = m.Sequential(
         m.Linear(784, 100),
         m.ReLU(),
         m.Dropout(p=0.8),
@@ -138,13 +155,13 @@ def main():
         m.ReLU(),
         m.Dropout(p=0.8),
         m.Linear(16, 10)
-    )
+    )"""
 
     loss = m.SoftMaxLoss()
 
     optimizer = o.SGDM(model.params())
     scheduler = o.lr_scheduler(optimizer, step_size=15)
-    ii, errors = trainer(model, loss, optimizer, scheduler, "Mini-Batch")
+    ii, errors = trainer(model, loss, optimizer, scheduler, "Batch")
     print("Training successfully completed, now beginning testing...")
 
     trained_model = torch.load(file)

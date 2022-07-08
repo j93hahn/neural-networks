@@ -57,13 +57,19 @@ class Dropout(Module):
         self._p = p
 
     def forward(self, _input):
-        self.mask = np.random.binomial(n=1, p=1-self._p, size=_input.shape)
-        self.mask /= (1 - self._p) # must scale down 
-        return _input * self.mask
+        _output = _input
+        if self._p > 0 and self.train:
+            self.mask = np.random.binomial(n=1, p=1-self._p, size=_input.shape)
+            self.mask /= (1 - self._p) # must scale down
+            _output *= self.mask
+        return _output
 
     def backward(self, _input, _gradPrev):
         # scale the backwards pass by the same amount
-        return _gradPrev * self.mask
+        _output = _gradPrev
+        if self._p > 0 and self.train:
+            _output *= self.mask
+        return _output
 
     def params(self):
         return None, None

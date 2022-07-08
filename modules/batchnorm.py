@@ -1,6 +1,5 @@
 from .module import Module
 import numpy as np
-from pudb import set_trace
 
 
 # requires mini-batch gradient descent

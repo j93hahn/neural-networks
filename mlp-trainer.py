@@ -6,11 +6,10 @@ import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import optim as o
-import matplotlib
 
 
 # define up here
-model_number = "13"
+model_number = "14"
 file = "mlp-arch/model-" + model_number + ".pt"
 image_loc = "plots/loss_plot_" + model_number + ".png"
 grad1_loc = "plots/weight_grad_plot_" + model_number + ".png"
@@ -132,9 +131,11 @@ def main():
     #    m.Linear(784, 10)
     #)
     model = m.Sequential(
-        m.Linear(784, 16),
+        m.Linear(784, 100),
         m.ReLU(),
         #m.Dropout(), # accuracy goes down to ~58% with dropout implemented
+        m.Linear(100, 16),
+        m.ReLU(),
         m.Linear(16, 10)
     )
 

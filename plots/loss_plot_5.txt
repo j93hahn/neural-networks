@@ -1,9 +1,0 @@
-alpha: 0.01
-success rate on test set: 90.05%
-backprop: SGD
-epochs: 1
-dataset: MNIST, training set
-batch size: 1
-
-notes: normalized input vector in both training and testing, and solved the
-        exploding gradients problem

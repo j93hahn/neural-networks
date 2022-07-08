@@ -1,36 +1,7 @@
 {
-    "model-5": {
+    "example-model": {
         "data type": "normalized MNIST data",
         "test success rate": 90.05,
         "optimizer": "SGDM"
-    },
-    "model-6": {
-        "data type": "non-normalized MNIST data",
-        "test success rate": 11.35,
-        "optimizer": "SGDM"
-    },
-    "model-11": {
-        "data type": "normalized MNIST data",
-        "test success rate": 92.36,
-        "optimizer": "SGDM",
-        "extra info": "Implemented a learning rate scheduler, with a decay of 0.1 -- Linear layer only"
-    },
-    "model-12": {
-        "data type": "normalized MNIST data",
-        "test success rate": 94.26,
-        "optimizer": "SGDM",
-        "extra info": "Implemented a learning rate scheduler, with a decay of 0.1 -- full neural network"
-    },
-    "model-13": {
-        "data type": "normalized MNIST data",
-        "test success rate": "N/A",
-        "optimizer": "SGDM",
-        "extra info": "implemented with batch size of 5"
-    },
-    "model-14": {
-        "data type":"normalized MNIST data",
-        "test success rate": 97.25,
-        "optimizer": "SGDM",
-        "extra info": "model scaled up significantly. 5 layers with hundreds of hidden units. Scalability seems to drastically improve performance"
     }
 }

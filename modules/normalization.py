@@ -16,7 +16,7 @@ class BatchNorm1d(Module):
         self.train_first = True
         self.inf_first = True
         self.eps = eps
-        self.momentum = momentum
+        self.momentum = momentum # another method for calculating running averages
         self.count = 0
 
         # initialize parameters
@@ -27,24 +27,23 @@ class BatchNorm1d(Module):
 
     def forward(self, _input):
         if self.train: # training batch-normalized network
-            # self._input = _input
             if self.train_first: # retrieve shape of input from the first mini-batch
                 self.m = _input.shape[0] # batch-size
                 self.running_mean = np.zeros(_input.shape[1])
                 self.running_var = np.zeros(_input.shape[1])
                 self.train_first = False
 
-            # calculate mini-batch statistics here
+            # calculate mini-batch statistics
             self.mean = np.mean(_input, axis=0)
             self.var = np.mean(np.square(_input - self.mean), axis=0)
-
-            # normalize data, then scale and shift via affine parameters
-            self.x_hat = (_input - self.mean) / np.sqrt(self.var + self.eps) # m by C, broadcasted
-            y = self.gamma * self.x_hat + self.beta # m by C, broadcasted
 
             # update moving statistics
             self.running_mean += self.mean
             self.running_var += self.var
+
+            # normalize data, then scale and shift via affine parameters
+            self.x_hat = (_input - self.mean) / np.sqrt(self.var + self.eps) # m by C, broadcasted
+            y = self.gamma * self.x_hat + self.beta # m by C, broadcasted
 
             # return output values
             self.count += 1
@@ -83,6 +82,7 @@ class BatchNorm1d(Module):
         return "Batch Normalization Layer"
 
 
+# a project for another day --> requires spatial dimensions to the input
 class GroupNorm(Module):
     def __init__(self, channels, groups=32, eps=1e-5) -> None:
         super().__init__()
@@ -94,17 +94,29 @@ class GroupNorm(Module):
 
         N = batch dimension, C = channel dimension, * = spatial dimensions
         Note: * = H x W in the original paper, but can also represent 0
+
+        gamma and beta have shape [1, C, *] where * = 1 for all additional
+        spatial dimensions, and 0 if no spatial dimensionality
         """
         self.channels = channels
         self.groups = groups
         self.eps = eps
 
+        # initialize parameters
+        self.gamma = np.ones(channels)
+        self.beta = np.zeros(channels)
+        self.gradGamma = np.zeros_like(self.gamma)
+        self.gradBeta = np.zeros_like(self.beta)
 
     def forward(self, _input):
         ...
 
     def backward(self, _input, _gradPrev):
-        ...
+        _gradCurr = ...
+        return _gradCurr
+
+    def params(self):
+        return [self.gamma, self.beta], [self.gradGamma, self.gradBeta]
 
     def type(self):
         return "Group Normalization Layer"

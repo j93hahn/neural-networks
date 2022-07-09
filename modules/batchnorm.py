@@ -1,4 +1,4 @@
-from .module import Module
+from module import Module
 import numpy as np
 
 
@@ -83,16 +83,25 @@ class BatchNorm1d(Module):
         return "Batch Normalization Layer"
 
 
-class GroupNorm(Module):
-    def __init__(self) -> None:
-        super().__init__()
+class GroupNorm1d(BatchNorm1d):
+    def __init__(self, input_dim) -> None:
+        super(GroupNorm1d, self).__init__(input_dim=input_dim)
         """
         Implemented exactly according to Wu and He 2018
         """
 
+    def forward(self, _input):
+        ...
 
-def test(run=False):
-    if run:
+    def backward(self, _input, _gradPrev):
+        ...
+
+    def type(self):
+        return "Group Normalization Layer"
+
+
+def test(run_batchnorm=False, run_groupnorm=True):
+    if run_batchnorm:
         test = BatchNorm1d(100)
         test.train()
         breakpoint()
@@ -105,6 +114,11 @@ def test(run=False):
         breakpoint()
         test.backward(np.random.randn(40, 100))
 
+    if run_groupnorm:
+        test = GroupNorm1d(input_dim=100)
+        test.train()
+        breakpoint()
+        print("100")
 
 if __name__ == '__main__':
-    test()
+    test(False, True)

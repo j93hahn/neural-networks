@@ -24,7 +24,7 @@ def trainer(model, loss, optimizer, scheduler, grad_type="Mini-Batch"):
 
     if grad_type == "Mini-Batch":
         epochs = 45
-        batch_size = 100
+        batch_size = 40
         T = int(train_data.shape[0]/batch_size)
         ii = np.arange(0, T)
         errors = np.zeros(T, dtype=np.float64)
@@ -98,7 +98,7 @@ def trainer(model, loss, optimizer, scheduler, grad_type="Mini-Batch"):
         raise Exception("Unsupported Gradient Descent Type")
 
     errors = errors / epochs #average errors loss
-    torch.save(model, file)
+    torch.save(model, 'mlp/optimal.pt')
     return ii, errors
 
 
@@ -146,25 +146,28 @@ def visualizer(x, y, grad=False, layer=0):
 
 
 def main():
-    model = m.Sequential(m.Linear(784, 10)) # Linear layer implementation
-    """model = m.Sequential(
+    #model = m.Sequential(m.Linear(784, 10)) # Linear layer implementation
+    model = m.Sequential(
         m.Linear(784, 100),
         m.ReLU(),
-        m.Dropout(p=0.8),
-        m.Linear(100, 16),
+        #m.Dropout(p=0.9),
+        m.Linear(100, 64),
         m.ReLU(),
-        m.Dropout(p=0.8),
+        #m.Dropout(p=0.9),
+        m.Linear(64, 16),
+        m.ReLU(),
+        #m.Dropout(p=0.9),
         m.Linear(16, 10)
-    )"""
+    )
 
     loss = m.SoftMaxLoss()
 
     optimizer = o.SGDM(model.params())
     scheduler = o.lr_scheduler(optimizer, step_size=15)
-    ii, errors = trainer(model, loss, optimizer, scheduler, "Batch")
+    ii, errors = trainer(model, loss, optimizer, scheduler, "Mini-Batch")
     print("Training successfully completed, now beginning testing...")
 
-    trained_model = torch.load(file)
+    trained_model = torch.load('mlp/optimal.pt')
     tester(trained_model)
     print("Maximum loss: ", np.max(errors))
 

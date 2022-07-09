@@ -30,13 +30,13 @@ class BatchNorm1d(Module):
             self._input = _input
             if self.train_first: # retrieve shape of input from the first mini-batch
                 self.m = self._input.shape[0] # batch-size
-                self.running_mean = np.zeros((self.m, 1))
-                self.running_var = np.zeros((self.m, 1))
+                self.running_mean = np.zeros(_input.shape[1])
+                self.running_var = np.zeros(_input.shape[1])
                 self.train_first = False
 
             # calculate mini-batch statistics here
-            self.mean = np.mean(self._input, axis=1)[:, np.newaxis] # m by 1
-            self.var = np.mean(np.square(self._input - self.mean), axis=1)[:, np.newaxis] # m by 1
+            self.mean = np.mean(self._input, axis=0)
+            self.var = np.mean(np.square(self._input - self.mean), axis=0)
 
             # normalize data, then scale and shift via affine parameters
             self.x_hat = (self._input - self.mean) / np.sqrt(self.var + self.eps) # m by C, broadcasted
@@ -68,12 +68,12 @@ class BatchNorm1d(Module):
 
         Requires _input, mean, var, x_hat to be passed from the forward pass
         """
-        _gradNorm = ... # dl/dx_hat
-        _gradVar = ... # dl/d_var
-        _gradMean = ... # dl/d_mu
-        _gradCurr = ... # dl/dx
-        self.gradGamma += np.sum(_gradPrev * self.x_hat, axis=1)[:, np.newaxis]
-        self.gradBeta += np.sum(_gradPrev, axis=1)[:, np.newaxis]
+        _gradxhat = _gradPrev * self.gamma
+        _gradVar = np.sum(_gradxhat * (self._input - self.mean) * -1/2*np.power(self.var + self.eps, -3/2), axis=0)
+        _gradMean = np.sum(_gradxhat * -1/np.sqrt(self.var + self.eps), axis=0)
+        _gradCurr = _gradxhat * 1/np.sqrt(self.var + self.eps) + _gradVar*2*(self._input - self.mean)/self.m + _gradMean*1/self.m
+        self.gradGamma += np.sum(_gradPrev * self.x_hat, axis=0)
+        self.gradBeta += np.sum(_gradPrev, axis=0)
         return _gradCurr
 
     def params(self):
@@ -84,10 +84,14 @@ class BatchNorm1d(Module):
 
 
 
-test = BatchNorm1d()
+test = BatchNorm1d(100)
+test.train()
 breakpoint()
 test.forward(np.random.randn(40, 100))
 
 test.eval()
 breakpoint()
 test.forward(np.random.randn(40, 100))
+
+breakpoint()
+test.backward(np.random.randn(40, 100))

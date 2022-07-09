@@ -83,6 +83,14 @@ class BatchNorm1d(Module):
         return "Batch Normalization Layer"
 
 
+class GroupNorm(Module):
+    def __init__(self) -> None:
+        super().__init__()
+        """
+        Implemented exactly according to Wu and He 2018
+        """
+
+
 def test(run=False):
     if run:
         test = BatchNorm1d(100)

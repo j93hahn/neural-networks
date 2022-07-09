@@ -4,10 +4,10 @@ import numpy as np
 
 # requires mini-batch gradient descent
 class BatchNorm1d(Module):
-    def __init__(self, input_dim, eps=1e-5, momentum=0.1) -> None:
+    def __init__(self, channels, eps=1e-5, momentum=0.1) -> None:
         super().__init__()
         """
-        Input has dimension m by C, where m is the batchsize
+        Input has dimension (M x C), where M is the batchsize, and C = channels
 
         To calculate running statistics, use the following formulas:
         E[x] <-- np.mean(mean_beta)
@@ -20,8 +20,8 @@ class BatchNorm1d(Module):
         self.count = 0
 
         # initialize parameters
-        self.gamma = np.ones(input_dim) # PyTorch implementation
-        self.beta = np.zeros(input_dim)
+        self.gamma = np.ones(channels) # PyTorch implementation
+        self.beta = np.zeros(channels)
         self.gradGamma = np.zeros_like(self.gamma)
         self.gradBeta = np.zeros_like(self.beta)
 
@@ -83,12 +83,22 @@ class BatchNorm1d(Module):
         return "Batch Normalization Layer"
 
 
-class GroupNorm1d(BatchNorm1d):
-    def __init__(self, input_dim) -> None:
-        super(GroupNorm1d, self).__init__(input_dim=input_dim)
+class GroupNorm(Module):
+    def __init__(self, channels, groups=32, eps=1e-5) -> None:
+        super().__init__()
         """
         Implemented exactly according to Wu and He 2018
+
+        Input: (N x C x *)
+        Output: (N x C x *)
+
+        N = batch dimension, C = channel dimension, * = spatial dimensions
+        Note: * = H x W in the original paper, but can also represent 0
         """
+        self.channels = channels
+        self.groups = groups
+        self.eps = eps
+
 
     def forward(self, _input):
         ...
@@ -115,7 +125,7 @@ def test(run_batchnorm=False, run_groupnorm=True):
         test.backward(np.random.randn(40, 100))
 
     if run_groupnorm:
-        test = GroupNorm1d(input_dim=100)
+        test = GroupNorm(channels=100)
         test.train()
         breakpoint()
         print("100")

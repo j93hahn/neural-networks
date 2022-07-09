@@ -1,4 +1,4 @@
-from module import Module
+from .module import Module
 import numpy as np
 
 
@@ -27,19 +27,19 @@ class BatchNorm1d(Module):
 
     def forward(self, _input):
         if self.train: # training batch-normalized network
-            self._input = _input
+            # self._input = _input
             if self.train_first: # retrieve shape of input from the first mini-batch
-                self.m = self._input.shape[0] # batch-size
+                self.m = _input.shape[0] # batch-size
                 self.running_mean = np.zeros(_input.shape[1])
                 self.running_var = np.zeros(_input.shape[1])
                 self.train_first = False
 
             # calculate mini-batch statistics here
-            self.mean = np.mean(self._input, axis=0)
-            self.var = np.mean(np.square(self._input - self.mean), axis=0)
+            self.mean = np.mean(_input, axis=0)
+            self.var = np.mean(np.square(_input - self.mean), axis=0)
 
             # normalize data, then scale and shift via affine parameters
-            self.x_hat = (self._input - self.mean) / np.sqrt(self.var + self.eps) # m by C, broadcasted
+            self.x_hat = (_input - self.mean) / np.sqrt(self.var + self.eps) # m by C, broadcasted
             y = self.gamma * self.x_hat + self.beta # m by C, broadcasted
 
             # update moving statistics
@@ -62,16 +62,16 @@ class BatchNorm1d(Module):
             y += self.beta - ((self.gamma * self.running_mean) / (np.sqrt(self.running_var + self.eps)))
             return y
 
-    def backward(self, _gradPrev):
+    def backward(self, _input, _gradPrev):
         """
         All gradient calculations taken directly from Ioffe and Szegedy 2015
 
-        Requires _input, mean, var, x_hat to be passed from the forward pass
+        Requires mean, var, x_hat to be passed from the forward pass
         """
         _gradxhat = _gradPrev * self.gamma
-        _gradVar = np.sum(_gradxhat * (self._input - self.mean) * -1/2*np.power(self.var + self.eps, -3/2), axis=0)
+        _gradVar = np.sum(_gradxhat * (_input - self.mean) * -1/2*np.power(self.var + self.eps, -3/2), axis=0)
         _gradMean = np.sum(_gradxhat * -1/np.sqrt(self.var + self.eps), axis=0)
-        _gradCurr = _gradxhat * 1/np.sqrt(self.var + self.eps) + _gradVar*2*(self._input - self.mean)/self.m + _gradMean*1/self.m
+        _gradCurr = _gradxhat * 1/np.sqrt(self.var + self.eps) + _gradVar*2*(_input - self.mean)/self.m + _gradMean*1/self.m
         self.gradGamma += np.sum(_gradPrev * self.x_hat, axis=0)
         self.gradBeta += np.sum(_gradPrev, axis=0)
         return _gradCurr
@@ -83,15 +83,20 @@ class BatchNorm1d(Module):
         return "Batch Normalization Layer"
 
 
+def test(run=False):
+    if run:
+        test = BatchNorm1d(100)
+        test.train()
+        breakpoint()
+        test.forward(np.random.randn(40, 100))
 
-test = BatchNorm1d(100)
-test.train()
-breakpoint()
-test.forward(np.random.randn(40, 100))
+        test.eval()
+        breakpoint()
+        test.forward(np.random.randn(40, 100))
 
-test.eval()
-breakpoint()
-test.forward(np.random.randn(40, 100))
+        breakpoint()
+        test.backward(np.random.randn(40, 100))
 
-breakpoint()
-test.backward(np.random.randn(40, 100))
+
+if __name__ == '__main__':
+    test()

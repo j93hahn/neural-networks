@@ -20,5 +20,30 @@
             "m.ReLU()",
             "m.Linear(16, 10)"
         ]
+    },
+    "batchnorm-model": {
+        "input": "normalized",
+        "test success": 98.41,
+        "max loss": 0.0788,
+        "loss function": "NLLLoss",
+        "optimizer": "SGDM",
+        "initial alpha": 0.1,
+        "gd": "mini-batch",
+        "batch size": 100,
+        "epochs": 45,
+        "scheduler":"linear, gamma=0.1, step_size=15",
+        "depth": 10,
+        "layers": [
+            "m.Linear(784, 100)",
+            "m.BatchNorm1d(input_dim=100)",
+            "m.ReLU()",
+            "m.Linear(100, 64)",
+            "m.BatchNorm1d(input_dim=64)",
+            "m.ReLU()",
+            "m.Linear(64, 16)",
+            "m.BatchNorm1d(input_dim=16)",
+            "m.ReLU()",
+            "m.Linear(16, 10)"
+        ]
     }
 }

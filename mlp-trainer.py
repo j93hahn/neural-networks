@@ -5,6 +5,7 @@ from pudb import set_trace
 import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+from modules.batchnorm import BatchNorm1d
 import optim as o
 
 
@@ -24,7 +25,7 @@ def trainer(model, loss, optimizer, scheduler, grad_type="Mini-Batch"):
 
     if grad_type == "Mini-Batch":
         epochs = 45
-        batch_size = 40
+        batch_size = 100
         T = int(train_data.shape[0]/batch_size)
         ii = np.arange(0, T)
         errors = np.zeros(T, dtype=np.float64)
@@ -45,7 +46,6 @@ def trainer(model, loss, optimizer, scheduler, grad_type="Mini-Batch"):
                 # now perform mini-batch gradient descent
                 curr_batch_data = _data[lower:upper, :]
                 curr_batch_labels = _labels[lower:upper]
-                breakpoint()
                 prediction = model.forward(curr_batch_data / 255)
                 actual = np.zeros((batch_size, 10))
                 actual[np.arange(0, batch_size), curr_batch_labels] = 1 # NumPy advanced indexing - produce one-hot encodings
@@ -99,7 +99,7 @@ def trainer(model, loss, optimizer, scheduler, grad_type="Mini-Batch"):
         raise Exception("Unsupported Gradient Descent Type")
 
     errors = errors / epochs #average errors loss
-    torch.save(model, 'mlp/optimal.pt')
+    torch.save(model, 'mlp/batchnorm.pt')
     return ii, errors
 
 
@@ -150,16 +150,18 @@ def main():
     #model = m.Sequential(m.Linear(784, 10)) # Linear layer implementation
     model = m.Sequential(
         m.Linear(784, 100),
+        m.BatchNorm1d(input_dim=100),
         m.ReLU(),
-        #m.Dropout(p=0.9),
         m.Linear(100, 64),
+        m.BatchNorm1d(input_dim=64),
         m.ReLU(),
-        #m.Dropout(p=0.9),
         m.Linear(64, 16),
+        m.BatchNorm1d(input_dim=16),
         m.ReLU(),
-        #m.Dropout(p=0.9),
         m.Linear(16, 10)
     )
+
+    model.train()
 
     loss = m.SoftMaxLoss()
 
@@ -168,7 +170,8 @@ def main():
     ii, errors = trainer(model, loss, optimizer, scheduler, "Mini-Batch")
     print("Training successfully completed, now beginning testing...")
 
-    trained_model = torch.load('mlp/optimal.pt')
+    trained_model = torch.load('mlp/batchnorm.pt')
+    trained_model.eval()
     tester(trained_model)
     print("Maximum loss: ", np.max(errors))
 

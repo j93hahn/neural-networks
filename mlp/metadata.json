@@ -1,7 +1,24 @@
 {
-    "example-model": {
-        "data type": "normalized MNIST data",
-        "test success rate": 90.05,
-        "optimizer": "SGDM"
+    "optimal-model": {
+        "input": "normalized",
+        "test success": 97.57,
+        "max loss": 0.1214,
+        "loss function": "NLLLoss",
+        "optimizer": "SGDM",
+        "initial alpha": 0.1,
+        "gd": "mini-batch",
+        "batch size": 40,
+        "epochs": 45,
+        "scheduler": "linear, gamma=0.1, step_size=15",
+        "depth": 7,
+        "layers": [
+            "m.Linear(784, 100)",
+            "m.ReLU()",
+            "m.Linear(100, 64)",
+            "m.ReLU()",
+            "m.Linear(64, 16)",
+            "m.ReLU()",
+            "m.Linear(16, 10)"
+        ]
     }
 }

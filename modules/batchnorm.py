@@ -18,30 +18,33 @@ class BatchNorm1d(Module):
         self.eps = eps
         self.momentum = momentum
         self.count = 0
-        self.gamma = np.ones(input_dim)
+
+        # initialize parameters
+        self.gamma = np.ones(input_dim) # PyTorch implementation
         self.beta = np.zeros(input_dim)
         self.gradGamma = np.zeros_like(self.gamma)
         self.gradBeta = np.zeros_like(self.beta)
 
     def forward(self, _input):
         if self.train: # training batch-normalized network
+            self._input = _input
             if self.train_first: # retrieve shape of input from the first mini-batch
-                self.m = _input.shape[0] # batch-size
+                self.m = self._input.shape[0] # batch-size
                 self.running_mean = np.zeros((self.m, 1))
                 self.running_var = np.zeros((self.m, 1))
                 self.train_first = False
 
             # calculate mini-batch statistics here
-            mean = np.mean(_input, axis=1)[:, np.newaxis] # m by 1
-            var = np.mean(np.square(_input - mean), axis=1)[:, np.newaxis] # m by 1
+            self.mean = np.mean(self._input, axis=1)[:, np.newaxis] # m by 1
+            self.var = np.mean(np.square(self._input - self.mean), axis=1)[:, np.newaxis] # m by 1
 
             # normalize data, then scale and shift via affine parameters
-            x_hat = (_input - mean) / np.sqrt(var + self.eps) # m by C, broadcasted
-            y = self.gamma * x_hat + self.beta # m by C, broadcasted
+            self.x_hat = (self._input - self.mean) / np.sqrt(self.var + self.eps) # m by C, broadcasted
+            y = self.gamma * self.x_hat + self.beta # m by C, broadcasted
 
             # update moving statistics
-            self.running_mean += mean
-            self.running_var += var
+            self.running_mean += self.mean
+            self.running_var += self.var
 
             # return output values
             self.count += 1
@@ -61,9 +64,17 @@ class BatchNorm1d(Module):
 
     def backward(self, _gradPrev):
         """
+        All gradient calculations taken directly from Ioffe and Szegedy 2015
 
+        Requires _input, mean, var, x_hat to be passed from the forward pass
         """
-        ...
+        _gradNorm = ... # dl/dx_hat
+        _gradVar = ... # dl/d_var
+        _gradMean = ... # dl/d_mu
+        _gradCurr = ... # dl/dx
+        self.gradGamma += np.sum(_gradPrev * self.x_hat, axis=1)[:, np.newaxis]
+        self.gradBeta += np.sum(_gradPrev, axis=1)[:, np.newaxis]
+        return _gradCurr
 
     def params(self):
         return [self.gamma, self.beta], [self.gradGamma, self.gradBeta]

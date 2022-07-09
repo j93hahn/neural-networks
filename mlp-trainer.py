@@ -45,6 +45,7 @@ def trainer(model, loss, optimizer, scheduler, grad_type="Mini-Batch"):
                 # now perform mini-batch gradient descent
                 curr_batch_data = _data[lower:upper, :]
                 curr_batch_labels = _labels[lower:upper]
+                breakpoint()
                 prediction = model.forward(curr_batch_data / 255)
                 actual = np.zeros((batch_size, 10))
                 actual[np.arange(0, batch_size), curr_batch_labels] = 1 # NumPy advanced indexing - produce one-hot encodings

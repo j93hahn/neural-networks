@@ -5,7 +5,6 @@ from pudb import set_trace
 import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from modules.batchnorm import BatchNorm1d
 import optim as o
 
 
@@ -150,13 +149,13 @@ def main():
     #model = m.Sequential(m.Linear(784, 10)) # Linear layer implementation
     model = m.Sequential(
         m.Linear(784, 100),
-        m.BatchNorm1d(input_dim=100),
+        m.BatchNorm1d(channels=100),
         m.ReLU(),
         m.Linear(100, 64),
-        m.BatchNorm1d(input_dim=64),
+        m.BatchNorm1d(channels=64),
         m.ReLU(),
         m.Linear(64, 16),
-        m.BatchNorm1d(input_dim=16),
+        m.BatchNorm1d(channels=16),
         m.ReLU(),
         m.Linear(16, 10)
     )

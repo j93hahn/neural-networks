@@ -27,5 +27,5 @@ class Module():
     def eval(self):
         self.train = False
 
-    def type(self):
+    def name(self):
         pass

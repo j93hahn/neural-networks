@@ -15,7 +15,7 @@ class Conv2d(Module):
     def update_params(self, alpha):
         ...
 
-    def type(self):
+    def name(self):
         return "Conv2d Layer"
 
 
@@ -29,8 +29,8 @@ class MaxPool(Module):
     def backward(self, _gradPrev):
         ...
 
-    def update_params(self, alpha):
+    def params(self):
         ...
 
-    def type(self):
+    def name(self):
         return "MaxPooling Layer"

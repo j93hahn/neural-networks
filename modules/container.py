@@ -11,7 +11,7 @@ class Sequential(Module):
 
     def components(self):
         for i in range(self.size()):
-            print(self.layers[i].type())
+            print(self.layers[i].name())
 
     def forward(self, _input):
         self._inputs = [_input]

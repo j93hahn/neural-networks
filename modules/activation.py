@@ -20,7 +20,7 @@ class ReLU(Module):
     def params(self):
         return None, None
 
-    def type(self):
+    def name(self):
         return "ReLU Activation"
 
 
@@ -38,7 +38,7 @@ class Sigmoid(Module):
         # calculate derivative on output vector space
         return _gradPrev * self._mask
 
-    def type(self):
+    def name(self):
         return "Sigmoid Activation"
 
 
@@ -72,5 +72,5 @@ class SoftMax(Module):
     def params(self):
         return None, None
 
-    def type(self):
+    def name(self):
         return "SoftMax Activation"

@@ -15,7 +15,7 @@ class CrossEntropyLoss(object):
         #set_trace()
         return _labels - _input
 
-    def type(self):
+    def name(self):
         return "Cross Entropy Loss"
 
 
@@ -33,7 +33,7 @@ class MSELoss(object):
     def backward(self, _input, _labels):
         return (_input - _input.max() - _labels) * -2 / _input.shape[0]
 
-    def type(self):
+    def name(self):
         return "Mean Squared Error Loss"
 
 
@@ -71,5 +71,5 @@ class SoftMaxLoss(object):
     def backward(self, _labels):
         return (np.exp(self._loglikelihood) - _labels) # / _labels.shape[0]
 
-    def type(self):
+    def name(self):
         return "Softmax Log Loss"

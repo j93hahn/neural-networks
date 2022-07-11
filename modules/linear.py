@@ -59,7 +59,7 @@ class Linear(Module):
     def params(self):
         return [self.weights, self.biases], [self.gradWeights, self.gradBiases]
 
-    def type(self):
+    def name(self):
         return "Linear Layer"
 
 
@@ -91,5 +91,5 @@ class Dropout(Module):
     def params(self):
         return None, None
 
-    def type(self):
+    def name(self):
         return "Dropout Layer"

@@ -78,7 +78,7 @@ class BatchNorm1d(Module):
     def params(self):
         return [self.gamma, self.beta], [self.gradGamma, self.gradBeta]
 
-    def type(self):
+    def name(self):
         return "Batch Normalization Layer"
 
 
@@ -118,7 +118,7 @@ class GroupNorm(Module):
     def params(self):
         return [self.gamma, self.beta], [self.gradGamma, self.gradBeta]
 
-    def type(self):
+    def name(self):
         return "Group Normalization Layer"
 
 

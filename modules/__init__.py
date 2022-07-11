@@ -5,7 +5,7 @@ from .activation import ReLU, SoftMax, Sigmoid
 from .loss import CrossEntropyLoss, MSELoss, SoftMaxLoss
 from .conv import Conv2d, MaxPool
 from .transformer import Transformer
-from .batchnorm import BatchNorm1d, GroupNorm
+from .normalization import BatchNorm1d, GroupNorm
 
 __all__ = [
     'Module', 'Linear', 'Sequential', 'ReLU', 'SoftMax', 'CrossEntropyLoss',

@@ -37,6 +37,16 @@ class Sequential(Module):
             if _p is not None:
                 params.append(_p)
                 gradParams.append(_g)
+                # account for residual block layers
+                """
+                if isinstance(_p, list):
+                    for i in range(len(_p)):
+                        params.append(_p[i])
+                        gradParams.append(_g[i])
+                else:
+                    params.append(_p)
+                    gradParams.append(_g)
+                """
         return params, gradParams
 
     def train(self):

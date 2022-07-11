@@ -160,17 +160,13 @@ def main():
         m.Linear(16, 10)
     )
 
-    model.train()
-
     loss = m.SoftMaxLoss()
-
     optimizer = o.SGDM(model.params())
     scheduler = o.lr_scheduler(optimizer, step_size=15)
     ii, errors = trainer(model, loss, optimizer, scheduler, "Mini-Batch")
     print("Training successfully completed, now beginning testing...")
 
     trained_model = torch.load('mlp/bloop.pt')
-    trained_model.eval()
     tester(trained_model)
     print("Maximum loss: ", np.max(errors))
 

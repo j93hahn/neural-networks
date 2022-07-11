@@ -8,8 +8,6 @@ from tqdm import tqdm
 import optim as o
 
 
-#test out github ssh key
-
 # define up here
 model_number = "16"
 file = "mlp-arch/model-" + model_number + ".pt"

@@ -98,7 +98,7 @@ def trainer(model, loss, optimizer, scheduler, grad_type="Mini-Batch"):
         raise Exception("Unsupported Gradient Descent Type")
 
     errors = errors / epochs #average errors loss
-    torch.save(model, 'mlp/batchnorm.pt')
+    torch.save(model, 'mlp/bloop.pt')
     return ii, errors
 
 
@@ -169,7 +169,7 @@ def main():
     ii, errors = trainer(model, loss, optimizer, scheduler, "Mini-Batch")
     print("Training successfully completed, now beginning testing...")
 
-    trained_model = torch.load('mlp/batchnorm.pt')
+    trained_model = torch.load('mlp/bloop.pt')
     trained_model.eval()
     tester(trained_model)
     print("Maximum loss: ", np.max(errors))

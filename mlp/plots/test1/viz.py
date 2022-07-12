@@ -1,19 +1,20 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import sys
+
+test = "1"
+os.chdir("../../data/test" + test)
 
 
 # access individual arrays like A['arr_0']
-test = "1"
-A = np.load("mlp/data/test" + test + "/experiment-A.npz")
-B = np.load("mlp/data/test" + test + "/experiment-B.npz")
-C = np.load("mlp/data/test" + test + "/experiment-C.npz")
-D = np.load("mlp/data/test" + test + "/experiment-D.npz")
-E = np.load("mlp/data/test" + test + "/experiment-E.npz")
-F = np.load("mlp/data/test" + test + "/experiment-F.npz")
+A = np.load("experiment-A.npz")
+B = np.load("experiment-B.npz")
+C = np.load("experiment-C.npz")
+D = np.load("experiment-D.npz")
+E = np.load("experiment-E.npz")
+F = np.load("experiment-F.npz")
 
-base_save_img = "mlp/plots/test" + test + "/"
+os.chdir("../../plots/test" + test)
 
 
 def viz_losses(A, B, C, D, E, F):
@@ -24,7 +25,7 @@ def viz_losses(A, B, C, D, E, F):
     plt.xlabel("Sample number in MNIST Test Set")
     plt.ylabel("Log Likelihood Loss for each Sample")
     plt.legend(["Zeros", "Random", "Gaussian", "He", "Xavier", "Xavier Normed"])
-    plt.savefig(base_save_img + "test_loss.png")
+    plt.savefig("test_loss.png")
     plt.show()
 
 

@@ -3,8 +3,8 @@ import numpy as np
 
 
 class Conv2d(Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-                 groups, padding=0, padding_mode="zeros") -> None:
+    def __init__(self, in_channels, out_channels, kernel_size, groups,
+                 stride=1, padding=0, padding_mode="zeros") -> None:
         super().__init__()
         """
         Input and output both have shape (N, C, H, W)

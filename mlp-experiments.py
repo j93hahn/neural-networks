@@ -22,10 +22,9 @@ Test number meanings:
 """
 
 
-test = "1"
-experiment = "E"
+test = "4"
+experiment = "G"
 save_array = "mlp/data/test" + test + "/experiment-" + experiment + ".npz"
-save_img = "mlp/plots/test" + test + experiment + ".png"
 
 
 def process_gradients(optimizer, gradients, epochs):
@@ -125,7 +124,12 @@ def inference(model, loss):
 
 def main():
     # define model configurations
-    model = m.Sequential(m.Linear(784, 10))
+    model = m.Sequential(
+        m.Linear(784, 32),
+        m.ReLU(),
+        m.Dropout(p=0.99),
+        m.Linear(32, 10)
+    )
     loss = m.SoftMaxLoss()
     optimizer = o.SGDM(model.params())
     #scheduler = o.lr_scheduler(optimizer, step_size=15)

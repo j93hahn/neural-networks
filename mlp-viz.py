@@ -1,26 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import modules as m
-import optim as o
-
-from data_loaders import mnist
-from tqdm import tqdm
 
 
 test = "1"
 experiment = "A"
 save_img = "mlp/data/test" + test + "/experiment-" + experiment + ".png"
-
-
-def inference(model):
-    model.eval()
-    count = 0
-    iterations = int(mnist.test_images.shape[0])
-    for i in tqdm(range(iterations)):
-        prediction = model.forward(mnist.test_images[i][np.newaxis, :] / 255)
-        if np.argmax(prediction) == mnist.test_labels[i]:
-            count += 1
-    print("Test success rate: " + str(count / 100) + "%")
 
 
 def viz():

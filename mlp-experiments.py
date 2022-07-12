@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import modules as m
 import optim as o
@@ -23,7 +22,6 @@ Test number meanings:
 """
 
 
-# define all save locations up here
 test = "1"
 experiment = "A"
 save_array = "mlp/data/test" + test + "/experiment-" + experiment + ".npz"
@@ -101,18 +99,28 @@ def training(model, loss, optimizer, scheduler=None):
             scheduler.step()
 
     result = process_gradients(optimizer, gradients, epochs)
-    np.savez(save_array, iterations, errors, result[0], result[1])
+    return iterations, errors, result
 
 
-def inference(model):
+def inference(model, loss):
     model.eval()
     count = 0
+
     iterations = int(mnist.test_images.shape[0])
+    ii = np.zeros(iterations, dtype=np.float64)
+    losses = np.zeros(iterations, dtype=np.float64)
+
     for i in tqdm(range(iterations)):
         prediction = model.forward(mnist.test_images[i][np.newaxis, :] / 255)
         if np.argmax(prediction) == mnist.test_labels[i]:
             count += 1
+
+        actual = np.zeros((1, 10))
+        actual[0, mnist.test_labels[i]] = 1
+        losses[i] += loss.forward(prediction, actual)
+    
     print("Test success rate: " + str(count / 100) + "%")
+    return ii, losses
 
 
 def main():
@@ -123,11 +131,14 @@ def main():
     #scheduler = o.lr_scheduler(optimizer, step_size=15)
 
     # training
-    training(model, loss, optimizer)
+    #iterations, errors, result = training(model, loss, optimizer)
     print("Training successfully completed, now beginning testing...")
 
     # inference
-    inference(model)
+    ii, losses = inference(model, loss)
+
+    # save data
+    np.savez(save_array, iterations, errors, result[0], result[1], ii, losses)
 
 
 if __name__ == '__main__':

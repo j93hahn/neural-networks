@@ -8,8 +8,8 @@ from data_loaders import mnist
 from tqdm import tqdm
 
 
-test = "2"
-experiment = "G"
+test = "3"
+experiment = "M"
 save_array = "mlp/data/test" + test + "/experiment-" + experiment + ".npz"
 
 
@@ -43,7 +43,7 @@ def training(model, loss, optimizer, scheduler=None):
     model.train()
 
     epochs = 45
-    batch_size = 100
+    batch_size = 15000
     T = int(train_data.shape[0]/batch_size)
     iterations = np.arange(1, epochs + 1)
     errors = np.zeros(epochs, dtype=np.float64)
@@ -112,12 +112,12 @@ def main():
     # define model configurations
     model = m.Sequential(
         m.Linear(784, 32),
+        m.BatchNorm1d(channels=32),
         m.ReLU(),
-        m.Dropout(p=0.95),
         m.Linear(32, 10)
     )
     loss = m.SoftMaxLoss()
-    optimizer = o.SGDM(model.params())
+    optimizer = o.SGDM(model.params(), alpha=0.1)
     #scheduler = o.lr_scheduler(optimizer, step_size=15)
 
     # training
@@ -128,7 +128,7 @@ def main():
     ii, losses = inference(model, loss)
 
     # save data
-    np.savez(save_array, iterations, errors, result[0], result[1], result[2], result[3], ii, losses)
+    np.savez(save_array, iterations, errors, result[0], result[1], result[2], result[3], result[4], result[5], ii, losses)
 
 
 if __name__ == '__main__':

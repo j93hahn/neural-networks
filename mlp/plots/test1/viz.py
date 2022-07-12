@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+
 test = "1"
 os.chdir("../../data/test" + test)
 
@@ -14,12 +15,13 @@ D = np.load("experiment-D.npz")
 E = np.load("experiment-E.npz")
 F = np.load("experiment-F.npz")
 
+
 os.chdir("../../plots/test" + test)
 
 
-def viz_losses(A, B, C, D, E, F):
+def viz_losses(experiments):
     fig, ax = plt.subplots()
-    for experiment in [A, B, C, D, E, F]:
+    for experiment in experiments:
         ax.plot(experiment['arr_5'])
     plt.title("Comparing Loss Rates of Six Weight Init Methods on MNIST Test Set")
     plt.xlabel("Sample number in MNIST Test Set")
@@ -60,4 +62,4 @@ def visualizer(x, y, grad=False, layer=0):
 
 
 if __name__ == '__main__':
-    viz_losses(A, B, C, D, E, F)
+    viz_losses([A, B, C, D, E, F])

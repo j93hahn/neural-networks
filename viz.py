@@ -7,8 +7,7 @@ def viz():
 
 
 def main():
-    model = torch.load('optimal.pt') # load model first
-    breakpoint()
+    model = torch.load('mlp/optimal.pt') # load model first
     print(model.components())
 
 if __name__ == '__main__':

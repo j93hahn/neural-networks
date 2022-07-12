@@ -19,7 +19,19 @@ F = np.load("experiment-F.npz")
 os.chdir("../../plots/test" + test)
 
 
-def viz_losses(experiments):
+def viz_train_losses(experiments):
+    fig, ax = plt.subplots()
+    for experiment in experiments:
+        ax.plot(experiment['arr_1']/45)
+    plt.title("Average Loss Rates of Six Weight Init Methods during MNIST Training")
+    plt.xlabel("Epoch")
+    plt.ylabel("Average Loss over Mini_Batches of 100")
+    plt.legend(["Zeros", "Random", "Gaussian", "He", "Xavier", "Xavier Normed"])
+    plt.savefig("training_loss.png")
+    plt.show()
+
+
+def viz_test_losses(experiments):
     fig, ax = plt.subplots()
     for experiment in experiments:
         ax.plot(experiment['arr_5'])
@@ -62,4 +74,5 @@ def visualizer(x, y, grad=False, layer=0):
 
 
 if __name__ == '__main__':
-    viz_losses([A, B, C, D, E, F])
+    #viz_test_losses([A, B, C, D, E, F])
+    viz_train_losses([A, B, C, D, E, F])

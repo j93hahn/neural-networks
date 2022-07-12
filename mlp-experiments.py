@@ -22,8 +22,8 @@ Test number meanings:
 """
 
 
-test = "4"
-experiment = "G"
+test = "1"
+experiment = "F"
 save_array = "mlp/data/test" + test + "/experiment-" + experiment + ".npz"
 
 
@@ -124,12 +124,7 @@ def inference(model, loss):
 
 def main():
     # define model configurations
-    model = m.Sequential(
-        m.Linear(784, 32),
-        m.ReLU(),
-        m.Dropout(p=0.99),
-        m.Linear(32, 10)
-    )
+    model = m.Sequential(m.Linear(784, 10, init_method="XavierNorm"))
     loss = m.SoftMaxLoss()
     optimizer = o.SGDM(model.params())
     #scheduler = o.lr_scheduler(optimizer, step_size=15)

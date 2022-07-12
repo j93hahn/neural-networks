@@ -1,5 +1,9 @@
-Experiment A: 92.37%
-Experiment B: 92.46%
-Experiment C: 92.41%
-Experiment D: 92.60%
-Experiment E: 92.52%
+Experimenting with different weight initialization techniques
+Structure: Linear(784, 10)
+
+Experiment A: 92.64%, Zero
+Experiment B: 91.06%, Random
+Experiment C: 92.51%, Gaussian
+Experiment D: 92.42%, He
+Experiment E: 92.40%, Xavier
+Experiment F: 92.70%, Xavier Norm

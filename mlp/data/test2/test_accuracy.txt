@@ -1,10 +1,11 @@
 Experimenting with different dropout rates on a 4-layer MLP
 Structure: Linear(784, 32), ReLU, Dropout, Linear(32, 10)
+Saved data format: iterations, errors, result[0], result[1], result[2], result[3], ii, losses
 
-Experiment A: 82.64%, p=0.1
-Experiment B: 92.28%, p=0.3
-Experiment C: 92.25%, p=0.5
-Experiment D: 94.61%, p=0.7
-Experiment E: 94.60%, p=0.9
-Experiment F: 94.06%, p=0.95
-Experiment G: 95.59%, p=0.99
+Experiment A: 70.28%, p=0.1
+Experiment B: 89.19%, p=0.25
+Experiment C: 90.20%, p=0.4
+Experiment D: 93.47%, p=0.55
+Experiment E: 93.88%, p=0.7
+Experiment F: 95.73%, p=0.85
+Experiment G: 96.23%, p=0.95

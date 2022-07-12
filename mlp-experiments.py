@@ -8,22 +8,8 @@ from data_loaders import mnist
 from tqdm import tqdm
 
 
-"""
-Test number meanings:
-1] One linear layer
-2] Two-layer MLP (one linear, one ReLU)
-3] Three-layer MLP (two linear, one ReLU)
-4] Four-layer MLP (two linear, one ReLU, one dropout)
-5] Four-layer MLP (two linear, one ReLU, one batchnorm)
-6] Seven-layer MLP (four linear, three ReLU)
-7] Seven-layer MLP (three linear, two ReLU, two dropout)
-8] Ten-layer MLP (four linear, three ReLU, three batchnorm)
-9] Sixteen-layer MLP (six linear, five ReLU, five batchnorm)
-"""
-
-
-test = "1"
-experiment = "F"
+test = "2"
+experiment = "G"
 save_array = "mlp/data/test" + test + "/experiment-" + experiment + ".npz"
 
 
@@ -124,7 +110,12 @@ def inference(model, loss):
 
 def main():
     # define model configurations
-    model = m.Sequential(m.Linear(784, 10, init_method="XavierNorm"))
+    model = m.Sequential(
+        m.Linear(784, 32),
+        m.ReLU(),
+        m.Dropout(p=0.95),
+        m.Linear(32, 10)
+    )
     loss = m.SoftMaxLoss()
     optimizer = o.SGDM(model.params())
     #scheduler = o.lr_scheduler(optimizer, step_size=15)
@@ -137,7 +128,7 @@ def main():
     ii, losses = inference(model, loss)
 
     # save data
-    np.savez(save_array, iterations, errors, result[0], result[1], ii, losses)
+    np.savez(save_array, iterations, errors, result[0], result[1], result[2], result[3], ii, losses)
 
 
 if __name__ == '__main__':

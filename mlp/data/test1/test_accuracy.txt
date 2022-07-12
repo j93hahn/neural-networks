@@ -1,5 +1,6 @@
 Experimenting with different weight initialization techniques
 Structure: Linear(784, 10)
+Saved data format: iterations, errors, result[0], result[1], ii, losses
 
 Experiment A: 92.64%, Zero
 Experiment B: 91.06%, Random

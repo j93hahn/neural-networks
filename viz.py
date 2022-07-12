@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import modules as m
 import optim as o
+import copy
+import sys
 
 from data_loaders import mnist
 from tqdm import tqdm
@@ -22,12 +24,37 @@ Test number meanings:
 
 
 # define all save locations up here
-test_number = "1"
-save_array = "mlp/plots/test" + test_number + ".npz" # save multiple arrays to one location
-save_img = "mlp/plots/test" + test_number + ".png"
+test = "1"
+experiment = "A"
+save_array = "mlp/data/test" + test + "/experiment-" + experiment + ".npz"
+save_img = "mlp/plots/test" + test + experiment + ".png"
 
 
-def training(model, loss, optimizer, scheduler, grad_type="Mini-Batch"):
+def process_gradients(optimizer, gradients, epochs):
+    """
+    Input: a Python list of arrays
+
+    Output: n arrays where n = optimizer.paramCount = len(gradients) / epochs
+            and each array has shape (E x *) where E = epochs and * is the shape
+            of the gradient parameters
+    """
+    n = int(len(gradients) / epochs)
+    if n != optimizer.paramCount:
+        sys.exit("Improper value for n")
+
+    result = []
+    for i in range(n):
+        x = i # check if x-value is correct
+        y = []
+        while x < len(gradients):
+            y.append(gradients[x])
+            x += n
+        y = np.asarray(y)
+        result.append(y)
+    return result
+
+
+def training(model, loss, optimizer, scheduler=None):
     train_data = mnist.train_images
     train_labels = mnist.train_labels
     model.train()
@@ -35,8 +62,9 @@ def training(model, loss, optimizer, scheduler, grad_type="Mini-Batch"):
     epochs = 45
     batch_size = 100
     T = int(train_data.shape[0]/batch_size)
-    ii = np.arange(0, T)
-    errors = np.zeros(T, dtype=np.float64)
+    iterations = np.arange(1, epochs + 1)
+    errors = np.zeros(epochs, dtype=np.float64)
+    gradients = []
 
     for e in range(epochs):
         # shuffle the data for every epoch
@@ -56,29 +84,39 @@ def training(model, loss, optimizer, scheduler, grad_type="Mini-Batch"):
             curr_batch_labels = _labels[lower:upper]
             prediction = model.forward(curr_batch_data / 255)
             actual = np.zeros((batch_size, 10))
-            actual[np.arange(0, batch_size), curr_batch_labels] = 1 # NumPy advanced indexing - produce one-hot encodings
+            actual[np.arange(0, batch_size), curr_batch_labels] = 1
 
-            error = loss.forward(prediction, actual)
-            errors[t] += error #np.minimum(1000, error)
+            errors[e] += loss.forward(prediction, actual)
             model.backward(prediction, loss.backward(actual))
             optimizer.step()
-        scheduler.step()
 
-    errors = errors / epochs #average errors loss
-    return ii, errors
+            # retrieve gradients at the end of each epoch
+            if t == T - 1:
+                _, _g = optimizer.state_dict()
+                for i in range(len(_g)):
+                    for j in range(len(_g[i])):
+                        x = copy.deepcopy(_g[i][j])
+                        gradients.append(x)
+        if scheduler is not None:
+            scheduler.step()
+
+    result = process_gradients(optimizer, gradients, epochs)
+    np.savez(save_array, iterations, errors, result[0], result[1])
 
 
 def inference(model):
     model.eval()
-
-    iterations = int(mnist.test_images.shape[0])
     count = 0
+    iterations = int(mnist.test_images.shape[0])
     for i in tqdm(range(iterations)):
         prediction = model.forward(mnist.test_images[i][np.newaxis, :] / 255)
-
         if np.argmax(prediction) == mnist.test_labels[i]:
             count += 1
     print("Test success rate: " + str(count / 100) + "%")
+
+
+def viz():
+    ...
 
 
 def visualizer(x, y, grad=False, layer=0):
@@ -112,20 +150,20 @@ def visualizer(x, y, grad=False, layer=0):
 
 
 def main():
-    # define model configurations here
+    # define model configurations
     model = m.Sequential(m.Linear(784, 10))
     loss = m.SoftMaxLoss()
     optimizer = o.SGDM(model.params())
-    scheduler = o.lr_scheduler(optimizer, step_size=15)
+    #scheduler = o.lr_scheduler(optimizer, step_size=15)
 
-
-    ii, errors = training(model, loss, optimizer, scheduler, "Mini-Batch")
+    # training
+    training(model, loss, optimizer)
     print("Training successfully completed, now beginning testing...")
-    #print("Visualizing Cross Entropy Loss Distribution")
-    #visualizer(x=ii, y=errors, grad=False)
-    #breakpoint()
-    #visualizer(x=np.array(gWeights, dtype=object), y=np.array(gBiases, dtype=object), grad=True, layer=1)
+
+    # inference
+    inference(model)
 
 
 if __name__ == '__main__':
     main()
+    # viz()

@@ -1,11 +1,11 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import modules as m
-from data_loaders import mnist
-from pudb import set_trace
-import torch
-import matplotlib.pyplot as plt
-from tqdm import tqdm
 import optim as o
+import torch
+
+from data_loaders import mnist
+from tqdm import tqdm
 
 
 # define up here

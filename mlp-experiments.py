@@ -23,7 +23,7 @@ Test number meanings:
 
 
 test = "1"
-experiment = "A"
+experiment = "E"
 save_array = "mlp/data/test" + test + "/experiment-" + experiment + ".npz"
 save_img = "mlp/plots/test" + test + experiment + ".png"
 
@@ -118,7 +118,7 @@ def inference(model, loss):
         actual = np.zeros((1, 10))
         actual[0, mnist.test_labels[i]] = 1
         losses[i] += loss.forward(prediction, actual)
-    
+
     print("Test success rate: " + str(count / 100) + "%")
     return ii, losses
 
@@ -131,7 +131,7 @@ def main():
     #scheduler = o.lr_scheduler(optimizer, step_size=15)
 
     # training
-    #iterations, errors, result = training(model, loss, optimizer)
+    iterations, errors, result = training(model, loss, optimizer)
     print("Training successfully completed, now beginning testing...")
 
     # inference

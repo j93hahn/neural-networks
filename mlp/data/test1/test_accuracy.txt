@@ -1,0 +1,5 @@
+Experiment A: 92.37%
+Experiment B: 92.46%
+Experiment C: 92.41%
+Experiment D: 92.60%
+Experiment E: 92.52%

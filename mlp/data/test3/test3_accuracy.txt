@@ -1,0 +1,17 @@
+Experimenting with different batch sizes for a batch-normalized network
+Structure: Linear(784, 32), BatchNorm1d(channels=32), ReLU, Linear(32, 10)
+Saved data format: iterations, errors, result[0], result[1], result[2], result[3], result[4], result[5], ii, losses
+
+Experiment A: 95.57%, size=5
+Experiment B: 96.72%, size=10
+Experiment C: 97.05%, size=25
+Experiment D: 96.97%, size=50
+Experiment E: 96.68%, size=100 <- standard batch size for all other experiments
+Experiment F: 96.56%, size=200
+Experiment G: 96.02%, size=500
+Experiment H: 96.35%, size=1000
+Experiment I: 95.80%, size=2000
+Experiment J: 96.01%, size=3000
+Experiment K: 11.35%, size=5000
+Experiment L: 10.27%, size=10000
+Experiment M: 9.80%, size=15000

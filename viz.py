@@ -112,14 +112,13 @@ def visualizer(x, y, grad=False, layer=0):
 
 
 def main():
-<<<<<<< HEAD
     # define model configurations here
     model = m.Sequential(m.Linear(784, 10))
     loss = m.SoftMaxLoss()
     optimizer = o.SGDM(model.params())
     scheduler = o.lr_scheduler(optimizer, step_size=15)
 
-    
+
     ii, errors = training(model, loss, optimizer, scheduler, "Mini-Batch")
     print("Training successfully completed, now beginning testing...")
     #print("Visualizing Cross Entropy Loss Distribution")
@@ -127,10 +126,6 @@ def main():
     #breakpoint()
     #visualizer(x=np.array(gWeights, dtype=object), y=np.array(gBiases, dtype=object), grad=True, layer=1)
 
-=======
-    model = torch.load('mlp/optimal.pt') # load model first
-    print(model.components())
->>>>>>> e8151d6b92c7c752ddd5ead74597496da1fa9e15
 
 if __name__ == '__main__':
     main()

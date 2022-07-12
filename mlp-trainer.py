@@ -17,7 +17,7 @@ grad2_loc = "plots/bias_grad_plot_" + model_number + ".png"
 text_loc = "plots/loss_plot_" + model_number + ".txt"
 
 
-def trainer(model, loss, optimizer, scheduler, grad_type="Mini-Batch"):
+def training(model, loss, optimizer, scheduler, grad_type="Mini-Batch"):
     train_data = mnist.train_images
     train_labels = mnist.train_labels
     model.train()
@@ -102,14 +102,12 @@ def trainer(model, loss, optimizer, scheduler, grad_type="Mini-Batch"):
     return ii, errors
 
 
-def tester(model):
+def inference(model):
     model.eval()
-
-    iterations = int(mnist.test_images.shape[0])
     count = 0
+    iterations = int(mnist.test_images.shape[0])
     for i in tqdm(range(iterations)):
         prediction = model.forward(mnist.test_images[i][np.newaxis, :] / 255)
-
         if np.argmax(prediction) == mnist.test_labels[i]:
             count += 1
     print("Test success rate: " + str(count / 100) + "%")
@@ -163,11 +161,11 @@ def main():
     loss = m.SoftMaxLoss()
     optimizer = o.SGDM(model.params())
     scheduler = o.lr_scheduler(optimizer, step_size=15)
-    ii, errors = trainer(model, loss, optimizer, scheduler, "Mini-Batch")
+    ii, errors = training(model, loss, optimizer, scheduler, "Mini-Batch")
     print("Training successfully completed, now beginning testing...")
 
     trained_model = torch.load('mlp/bloop.pt')
-    tester(trained_model)
+    inference(trained_model)
     print("Maximum loss: ", np.max(errors))
 
     #_, _, gWeights, gBiases = trained_model.params()

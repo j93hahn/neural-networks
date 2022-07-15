@@ -70,8 +70,8 @@ class Pooling2d(Module):
                 self.indices = _output.repeat(self.kernel_size, axis=-1).repeat(self.kernel_size, axis=-2)
             else:
                 breakpoint()
-                self.indices = np.empty_like(_input)
-                self.indices[:, :, ]
+                # the key to solve this is using np.insert()
+                # x = np.insert(np.insert(self.indices, obj=(2, 4), values=0, axis=-1), obj=(2, 4), values=0, axis=-2)
                 self.indices = _output.repeat(self.kernel_size, axis=-1).repeat(self.kernel_size, axis=-2)
 
         return _output

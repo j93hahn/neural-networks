@@ -16,9 +16,19 @@ class Pooling2d(Module):
         super().__init__()
         self.kernel_size = kernel_size # input must be an integer
         self.stride = kernel_size if stride == None else stride
+
+        # hard-code assumptions here
         if type(self.kernel_size) != type(self.stride):
-            raise Exception("Kernel size and stride input types do not match")
+            raise Exception("Stride type does not match kernel filter type")
+        if not isinstance(self.stride, int):
+            raise Exception("Invalid stride input type")
+        if self.stride < self.kernel_size:
+            raise Exception("Kernel size is larger than the stride")
+
         self.return_indices = return_indices # if true, return index of max value, necessary for MaxUnpool2d
+
+        if mode not in ["Max", "Min", "Avg"]:
+            raise Exception("Invalid pooling mode specified")
         self.mode = mode
 
     def forward(self, _input):
@@ -40,40 +50,41 @@ class Pooling2d(Module):
 
         output = np.stack((a1, a2, a3), axis=2)
         """
-        if isinstance(self.stride, int):
-            if _input.shape[2] % self.stride:
-                raise Exception("Invalid kernel size for input size shape")
-            if self.stride < self.kernel_size:
-                raise Exception("Kernel size is larger than the stride")
+        if _input.shape[2] % self.stride:
+            raise Exception("Invalid stride shape for input size shape")
 
-            h = int(_input.shape[2] / self.stride) # these determine output shape
-            grids = [np.ix_(np.arange(self.stride*i, self.stride*i+self.kernel_size),
-                            np.arange(self.stride*i, self.stride*i+self.kernel_size)) for i in range(h)]
-            _pooled = [_input[:, :, grids[i][0], [grids[j][1] for j in range(h)]] for i in range(h)]
+        h = int(_input.shape[2] / self.stride) # these determine output shape
+        grids = [np.ix_(np.arange(self.stride*i, self.stride*i+self.kernel_size),
+                        np.arange(self.stride*i, self.stride*i+self.kernel_size)) for i in range(h)]
+        _pooled = [_input[:, :, grids[i][0], [grids[j][1] for j in range(h)]] for i in range(h)]
 
-            if self.mode == "Max":
-                _output = np.stack([hz.max(axis=(-1, -2)) for hz in _pooled], axis=2)
-            elif self.mode == "Min":
-                _output = np.stack([hz.min(axis=(-1, -2)) for hz in _pooled], axis=2)
-            elif self.mode == "Avg":
-                _output = np.stack([hz.mean(axis=(-1, -2)) for hz in _pooled], axis=2)
+        if self.mode == "Max":
+            _output = np.stack([hz.max(axis=(-1, -2)) for hz in _pooled], axis=2)
+        elif self.mode == "Min":
+            _output = np.stack([hz.min(axis=(-1, -2)) for hz in _pooled], axis=2)
+        elif self.mode == "Avg":
+            _output = np.stack([hz.mean(axis=(-1, -2)) for hz in _pooled], axis=2)
+
+        if self.return_indices:
+            if self.kernel_size == self.stride:
+                self.indices = _output.repeat(self.kernel_size, axis=-1).repeat(self.kernel_size, axis=-2)
             else:
-                raise Exception("Invalid pooling mode specified")
+                breakpoint()
+                self.indices = np.empty_like(_input)
+                self.indices[:, :, ]
+                self.indices = _output.repeat(self.kernel_size, axis=-1).repeat(self.kernel_size, axis=-2)
 
-            if self.return_indices:
-                if self.kernel_size == self.stride:
-                    self.indices = _output.repeat(self.kernel_size, axis=-1).repeat(self.kernel_size, axis=-2)
-                else:
-                    self.indices = _output.repeat(self.kernel_size, axis=-1).repeat(self.kernel_size, axis=-2)
-            return _output
-        else:
-            raise Exception("Invalid stride input type")
+        return _output
 
     def backward(self, _input, _gradPrev):
         if not self.return_indices: # must be True to enable backpropagation
             raise Exception("Module not equipped to handle backwards propagation")
 
-        y = _gradPrev.repeat(self.stride, axis=-1).repeat(self.stride, axis=-2)
+        if self.kernel_size == self.stride:
+            y = _gradPrev.repeat(self.kernel_size, axis=-1).repeat(self.kernel_size, axis=-2)
+        else:
+            y = _gradPrev.repeat(self.kernel_size, axis=-1).repeat(self.kernel_size, axis=-2)
+
         if self.mode == "Max" or self.mode == "Min":
             _gradCurr = np.zeros_like(_input)
             mask = np.equal(_input, self.indices).astype(int) * y # zero-out non-important elements
@@ -94,7 +105,6 @@ def test_pool2d():
     test = Pooling2d(kernel_size=2, stride=3, mode="Avg")
     _I = np.random.randint(1, 12, size=(100, 3, 6, 6))
     _G = np.random.randn(100, 3, 2, 2)
-    breakpoint()
     _output = test.forward(_I)
     assert _output.shape == _G.shape
     breakpoint()

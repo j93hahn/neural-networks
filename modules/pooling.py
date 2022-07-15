@@ -1,3 +1,4 @@
+from numpy.lib.stride_tricks import sliding_window_view, as_strided
 from .module import Module
 import numpy as np
 
@@ -15,7 +16,7 @@ within a kernel (very unlikely), pass the gradients to all elements with the min
 or max value
 """
 class Pooling2d(Module):
-    def __init__(self, kernel_size, stride=None, mode="Max", return_indices=True) -> None:
+    def __init__(self, kernel_size, stride=None, mode="max", return_indices=True) -> None:
         super().__init__()
         self.kernel_size = kernel_size # input must be an integer
         self.stride = kernel_size if stride == None else stride
@@ -30,7 +31,7 @@ class Pooling2d(Module):
 
         self.return_indices = return_indices # if true, return index of max value, necessary for MaxUnpool2d
 
-        if mode not in ["Max", "Min", "Avg"]:
+        if mode not in ["max", "min", "avg"]:
             raise Exception("Invalid pooling mode specified")
         self.mode = mode
 
@@ -63,14 +64,14 @@ class Pooling2d(Module):
                         np.arange(self.stride*i, self.stride*i+self.kernel_size)) for i in range(self.h)]
         _pooled = [_input[:, :, grids[i][0], [grids[j][1] for j in range(self.h)]] for i in range(self.h)]
 
-        if self.mode == "Max":
+        if self.mode == "max":
             _output = np.stack([hz.max(axis=(-1, -2)) for hz in _pooled], axis=2)
-        elif self.mode == "Min":
+        elif self.mode == "min":
             _output = np.stack([hz.min(axis=(-1, -2)) for hz in _pooled], axis=2)
-        elif self.mode == "Avg":
+        elif self.mode == "avg":
             _output = np.stack([hz.mean(axis=(-1, -2)) for hz in _pooled], axis=2)
 
-        if self.return_indices and self.mode in ["Max", "Min"]:
+        if self.return_indices and self.mode in ["max", "min"]:
             self.indices = _output.repeat(self.stride, axis=-1).repeat(self.stride, axis=-2)
 
         return _output
@@ -95,9 +96,12 @@ class Pooling2d(Module):
             y[..., _pads[0], :] = 0
             y[..., :, _pads[1]] = 0
 
-        if self.mode == "Max" or self.mode == "Min":
+        if self.mode == "max" or self.mode == "min":
             _gradCurr = np.equal(_input, self.indices).astype(int) * y
         else: # average pooling
+            """
+            I think y should be multiplied by all ones, like it is done in max or min pool
+            """
             _gradCurr = _input * y / (self.kernel_size ** 2) # scale gradient down by 1 / (N^2)
 
         if _gradCurr.shape != _input.shape:
@@ -109,11 +113,11 @@ class Pooling2d(Module):
         return None, None
 
     def name(self):
-        return self.mode + "Pool2d Layer"
+        return self.mode.capitalize() + "Pool2d Layer"
 
 
 def test_pool2d():
-    test = Pooling2d(kernel_size=5, stride=6, mode="Avg")
+    test = Pooling2d(kernel_size=5, stride=6, mode="avg")
     _I = np.random.randint(1, 12, size=(100, 3, 30, 30))
     _G = np.random.randn(100, 3, 5, 5)
     _output = test.forward(_I)

@@ -70,7 +70,7 @@ class Pooling2d(Module):
         elif self.mode == "Avg":
             _output = np.stack([hz.mean(axis=(-1, -2)) for hz in _pooled], axis=2)
 
-        if self.return_indices:
+        if self.return_indices and self.mode in ["Max", "Min"]:
             self.indices = _output.repeat(self.stride, axis=-1).repeat(self.stride, axis=-2)
 
         return _output
@@ -113,9 +113,9 @@ class Pooling2d(Module):
 
 
 def test_pool2d():
-    test = Pooling2d(kernel_size=2, stride=3, mode="Max")
-    _I = np.random.randint(1, 12, size=(100, 3, 6, 6))
-    _G = np.random.randn(100, 3, 2, 2)
+    test = Pooling2d(kernel_size=5, stride=6, mode="Avg")
+    _I = np.random.randint(1, 12, size=(100, 3, 30, 30))
+    _G = np.random.randn(100, 3, 5, 5)
     _output = test.forward(_I)
     _gradOutput = test.backward(_I, _G)
 

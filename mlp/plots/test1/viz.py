@@ -26,7 +26,7 @@ os.chdir("../../plots/test" + test)
 def viz_train_losses(exper):
     fig, ax = plt.subplots()
     for experiment in exper:
-        ax.plot(experiment['arr_1']/45)
+        ax.plot(experiment['arr_1']/4500, "x-")
     plt.title("Average Loss Rates of Six Weight Init Methods during MNIST Training")
     plt.xlabel("Epoch")
     plt.ylabel("Average Loss over Mini_Batches of 100")
@@ -54,21 +54,25 @@ def viz_gradients(experiment):
     # experiment['arr_3'] = epochs x 10
 
     gs = grid_spec.GridSpec(weights.shape[0], ncols=1) # epochs by 1
-    fig = plt.figure(figsize=(10,6.5))
+    fig = plt.figure(figsize=(7,5))
 
     ax_objs = []
     spines = ["top", "right", "left", "bottom"]
     x_low = -0.02; x_high = 0.02
 
     for epoch in reversed(range(weights.shape[0])):
+        # breakpoint()
         data = weights[epoch].reshape(-1, 1).squeeze() # line up all data points in one line
-        density = kde.gaussian_kde(data)
-        x_d = np.linspace(x_low, x_high, 100)
-        y_d = density(x_d)
+        print("Standard deviation: " + str(np.std(data)))
+        #density = kde.gaussian_kde(data)
+        x_d = np.linspace(x_low, x_high, 50)
+        y_d, _ = np.histogram(a=data, bins=50, range=(x_low, x_high), density=True)
+        #y_d = density(x_d)
 
-        ax_objs.append(fig.add_subplot(gs[epoch:epoch+1, 0:]))
+
+        ax_objs.append(fig.add_subplot(gs[weights.shape[0]-1-epoch:weights.shape[0]-epoch, 0:]))
         ax_objs[-1].plot(x_d, y_d, color=outline, lw=1)
-        ax_objs[-1].fill_between(x_d, y_d, alpha=0.2, color=color)
+        ax_objs[-1].fill_between(x_d, y_d, alpha=0, color=color)
 
         ax_objs[-1].set_xlim(x_low, x_high)
 
@@ -76,29 +80,30 @@ def viz_gradients(experiment):
         rect.set_alpha(0)
 
         ax_objs[-1].set_yticks([])
-        if epoch == weights.shape[0] - 1:
+        if epoch == 0:
             ax_objs[-1].set_xlabel("Distribution of Gradients", fontsize=12)
             ax_objs[-1].set_xticks(np.arange(x_low, x_high + 1e-5, (x_high - x_low) / 5))
         else:
             ax_objs[-1].set_xticks([])
 
-        #if epoch == 0 or epoch == weights.shape[0] - 1:
-        #    ax_objs[-1].set_ylabel("Epoch" + str(epoch + 1), fontsize=5)
+        if epoch == 0 or epoch == weights.shape[0] - 1:
+            ax_objs[-1].set_ylabel("Epoch" + str(epoch + 1), fontsize=5, loc='bottom', rotation='horizontal')
 
-        if epoch == np.floor(weights.shape[0] / 2) + 3:
-            ax_objs[-1].set_ylabel("Epoch", fontsize=12)
+        if epoch == np.ceil(weights.shape[0] / 2):
+            ax_objs[-1].set_ylabel("Epoch", fontsize=12, loc='bottom')
 
         for s in spines:
             ax_objs[-1].spines[s].set_visible(False)
 
     gs.update(hspace=-0.9)
-    plt.title("Distribution of Gradients for Zeros Initialization", fontweight='bold', fontsize=15)
-    # plt.yticks(ticks=[0, 44], labels=["Epoch 1", "Epoch 45"])
+    fig.suptitle("Distribution of Gradients for Random Initialization", fontweight='bold', fontsize=15, y=0.92)
+    # plt.title("Distribution of Gradients for Zeros Initialization", fontweight='bold', fontsize=15)
+    #plt.savefig("random_init_gradients.pdf")
     # plt.tight_layout()
-    plt.show()
+    #plt.show()
 
 
 if __name__ == '__main__':
     #viz_test_losses(experiments)
-    #viz_train_losses(experiments)
-    viz_gradients(A)
+    viz_train_losses(experiments)
+    viz_gradients(B)

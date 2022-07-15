@@ -10,6 +10,9 @@ Key Asumptions:
 2) kernel_size and stride are both integers but do not need to be same value
 3) kernel_size <= stride
 4) No padding - the pooling can only happen over the given input image plane
+5) For min or max pooling, if multiple elements have the same minimum or maximum value
+within a kernel (very unlikely), pass the gradients to all elements with the min
+or max value
 """
 class Pooling2d(Module):
     def __init__(self, kernel_size, stride=None, mode="Max", return_indices=True) -> None:
@@ -52,11 +55,13 @@ class Pooling2d(Module):
         """
         if _input.shape[2] % self.stride:
             raise Exception("Invalid stride shape for input size shape")
+        if _input.shape[2] != _input.shape[3]:
+            raise Exception("Input spatial dimension axes do not match")
 
-        h = int(_input.shape[2] / self.stride) # these determine output shape
+        self.h = int(_input.shape[2] / self.stride) # these determine output shape
         grids = [np.ix_(np.arange(self.stride*i, self.stride*i+self.kernel_size),
-                        np.arange(self.stride*i, self.stride*i+self.kernel_size)) for i in range(h)]
-        _pooled = [_input[:, :, grids[i][0], [grids[j][1] for j in range(h)]] for i in range(h)]
+                        np.arange(self.stride*i, self.stride*i+self.kernel_size)) for i in range(self.h)]
+        _pooled = [_input[:, :, grids[i][0], [grids[j][1] for j in range(self.h)]] for i in range(self.h)]
 
         if self.mode == "Max":
             _output = np.stack([hz.max(axis=(-1, -2)) for hz in _pooled], axis=2)
@@ -66,31 +71,37 @@ class Pooling2d(Module):
             _output = np.stack([hz.mean(axis=(-1, -2)) for hz in _pooled], axis=2)
 
         if self.return_indices:
-            if self.kernel_size == self.stride:
-                self.indices = _output.repeat(self.kernel_size, axis=-1).repeat(self.kernel_size, axis=-2)
-            else:
-                breakpoint()
-                # the key to solve this is using np.insert()
-                # x = np.insert(np.insert(self.indices, obj=(2, 4), values=0, axis=-1), obj=(2, 4), values=0, axis=-2)
-                self.indices = _output.repeat(self.kernel_size, axis=-1).repeat(self.kernel_size, axis=-2)
+            self.indices = _output.repeat(self.stride, axis=-1).repeat(self.stride, axis=-2)
 
         return _output
 
     def backward(self, _input, _gradPrev):
         if not self.return_indices: # must be True to enable backpropagation
             raise Exception("Module not equipped to handle backwards propagation")
+        if _gradPrev.shape[-1] != _gradPrev.shape[-2]:
+            raise Exception("Adjoint state has incorrect spatial dimensions")
+        if _gradPrev.shape[-1] != self.h:
+            raise Exception("Adjoint state does not have matching dimensions with internals of the module")
 
-        if self.kernel_size == self.stride:
-            y = _gradPrev.repeat(self.kernel_size, axis=-1).repeat(self.kernel_size, axis=-2)
-        else:
-            y = _gradPrev.repeat(self.kernel_size, axis=-1).repeat(self.kernel_size, axis=-2)
+        y = _gradPrev.repeat(self.stride, axis=-1).repeat(self.stride, axis=-2)
+        if self.kernel_size < self.stride:
+            _pads = []
+            diff = self.stride - self.kernel_size
+            for i in range(diff):
+                _pads.append(np.arange(self.kernel_size+i, _input.shape[2], self.stride))
+            _pads = np.concatenate(_pads).astype(int).tolist()
+            _pads = np.ix_(_pads, _pads)
+
+            y[..., _pads[0], :] = 0
+            y[..., :, _pads[1]] = 0
 
         if self.mode == "Max" or self.mode == "Min":
-            _gradCurr = np.zeros_like(_input)
-            mask = np.equal(_input, self.indices).astype(int) * y # zero-out non-important elements
-            _gradCurr[:, :, :mask.shape[2], :mask.shape[3]] = mask
+            _gradCurr = np.equal(_input, self.indices).astype(int) * y
         else: # average pooling
             _gradCurr = _input * y / (self.kernel_size ** 2) # scale gradient down by 1 / (N^2)
+
+        if _gradCurr.shape != _input.shape:
+            raise Exception("Current gradient does not match dimensions of input vector")
 
         return _gradCurr
 
@@ -102,14 +113,11 @@ class Pooling2d(Module):
 
 
 def test_pool2d():
-    test = Pooling2d(kernel_size=2, stride=3, mode="Avg")
+    test = Pooling2d(kernel_size=2, stride=3, mode="Max")
     _I = np.random.randint(1, 12, size=(100, 3, 6, 6))
     _G = np.random.randn(100, 3, 2, 2)
     _output = test.forward(_I)
-    assert _output.shape == _G.shape
-    breakpoint()
     _gradOutput = test.backward(_I, _G)
-    assert _gradOutput.shape == _I.shape
 
 
 if __name__ == '__main__':

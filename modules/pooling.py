@@ -1,4 +1,4 @@
-from numpy.lib.stride_tricks import sliding_window_view, as_strided
+from numpy.lib.stride_tricks import sliding_window_view
 from .module import Module
 import numpy as np
 
@@ -42,34 +42,36 @@ class Pooling2d(Module):
         Note: Number of grids N = H / stride
         Each grid should go from 0+stride*n to stride*(n+1) from n is in range(0, N)
 
-        a = np.arange(540).reshape(3, 5, 6, 6)
+        Method 1: Use np.ix_ and np.stack to construct the output arrays
+        Method 2: Use sliding_window_view to construct the output arrays
 
-        grid1 = np.ix_([0, 1], [0, 1])
-        grid2 = np.ix_([2, 3], [2, 3])
-        grid3 = np.ix_([4, 5], [4, 5])
-
-        a1 = a[:, :, grid1[0], [grid1[1], grid2[1], grid3[1]]].max(axis=(-1, -2))
-        a2 = a[:, :, grid2[0], [grid1[1], grid2[1], grid3[1]]].max(axis=(-1, -2))
-        a3 = a[:, :, grid3[0], [grid1[1], grid2[1], grid3[1]]].max(axis=(-1, -2))
-
-        output = np.stack((a1, a2, a3), axis=2)
+        Tried and tested using np.all() - both methods produce equivalent results
+        and have similar runtime complexities
         """
         if _input.shape[2] % self.stride:
             raise Exception("Invalid stride shape for input size shape")
         if _input.shape[2] != _input.shape[3]:
             raise Exception("Input spatial dimension axes do not match")
 
-        self.h = int(_input.shape[2] / self.stride) # these determine output shape
-        grids = [np.ix_(np.arange(self.stride*i, self.stride*i+self.kernel_size),
-                        np.arange(self.stride*i, self.stride*i+self.kernel_size)) for i in range(self.h)]
-        _pooled = [_input[:, :, grids[i][0], [grids[j][1] for j in range(self.h)]] for i in range(self.h)]
+        self.h = int(_input.shape[2] / self.stride) # determines output spatial dimension
+
+        # Method 1
+        # grids = [np.ix_(np.arange(self.stride*i, self.stride*i+self.kernel_size),
+        #                 np.arange(self.stride*i, self.stride*i+self.kernel_size)) for i in range(self.h)]
+        # _pooled = [_input[:, :, grids[i][0], [grids[j][1] for j in range(self.h)]] for i in range(self.h)]
+
+        # Method 2
+        _windows = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, :, ::self.stride, ::self.stride]
 
         if self.mode == "max":
-            _output = np.stack([hz.max(axis=(-1, -2)) for hz in _pooled], axis=2)
+            # _output = np.stack([hz.max(axis=(-1, -2)) for hz in _pooled], axis=2)
+            _output = _windows.max(axis=(-1, -2))
         elif self.mode == "min":
-            _output = np.stack([hz.min(axis=(-1, -2)) for hz in _pooled], axis=2)
+            # _output = np.stack([hz.min(axis=(-1, -2)) for hz in _pooled], axis=2)
+            _output = _windows.min(axis=(-1, -2))
         elif self.mode == "avg":
-            _output = np.stack([hz.mean(axis=(-1, -2)) for hz in _pooled], axis=2)
+            # _output = np.stack([hz.mean(axis=(-1, -2)) for hz in _pooled], axis=2)
+            _output = _windows.mean(axis=(-1, -2))
 
         if self.return_indices and self.mode in ["max", "min"]:
             self.indices = _output.repeat(self.stride, axis=-1).repeat(self.stride, axis=-2)
@@ -85,24 +87,28 @@ class Pooling2d(Module):
             raise Exception("Adjoint state does not have matching dimensions with internals of the module")
 
         y = _gradPrev.repeat(self.stride, axis=-1).repeat(self.stride, axis=-2)
+
+        # if stride > kernel_size, we have to zero out the elements from the gradient
+        # which were not included in the kernel but are included in the stride
         if self.kernel_size < self.stride:
-            _pads = []
+            _pads = [] # assumes that _input spatial dimensions are squares
             diff = self.stride - self.kernel_size
             for i in range(diff):
-                _pads.append(np.arange(self.kernel_size+i, _input.shape[2], self.stride))
+                _pads.append(np.arange(self.kernel_size+i, _input.shape[-1], self.stride))
             _pads = np.concatenate(_pads).astype(int).tolist()
             _pads = np.ix_(_pads, _pads)
 
-            y[..., _pads[0], :] = 0
-            y[..., :, _pads[1]] = 0
+            y[:, :, _pads[0], :] = 0
+            y[:, :, :, _pads[1]] = 0
 
         if self.mode == "max" or self.mode == "min":
+            # apply a mask such that only the maximum or minimum value of each kernel
+            # has the gradient passed backwards to it
             _gradCurr = np.equal(_input, self.indices).astype(int) * y
-        else: # average pooling
-            """
-            I think y should be multiplied by all ones, like it is done in max or min pool
-            """
-            _gradCurr = _input * y / (self.kernel_size ** 2) # scale gradient down by 1 / (N^2)
+        elif self.mode == "avg":
+            # scale gradient down by 1 / (H * W) - each element in the kernel gets
+            # an equal proportion of the gradient
+            _gradCurr = y / (self.kernel_size ** 2)
 
         if _gradCurr.shape != _input.shape:
             raise Exception("Current gradient does not match dimensions of input vector")
@@ -117,9 +123,9 @@ class Pooling2d(Module):
 
 
 def test_pool2d():
-    test = Pooling2d(kernel_size=5, stride=6, mode="avg")
-    _I = np.random.randint(1, 12, size=(100, 3, 30, 30))
-    _G = np.random.randn(100, 3, 5, 5)
+    test = Pooling2d(kernel_size=2, stride=3, mode="avg")
+    _I = np.random.randint(1, 12, size=(100, 3, 6, 6))
+    _G = np.random.randn(100, 3, 2, 2)
     _output = test.forward(_I)
     _gradOutput = test.backward(_I, _G)
 

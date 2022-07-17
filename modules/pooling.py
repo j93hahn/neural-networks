@@ -91,15 +91,15 @@ class Pooling2d(Module):
         # if stride > kernel_size, we have to zero out the elements from the gradient
         # which were not included in the kernel but are included in the stride
         if self.kernel_size < self.stride:
-            _pads = [] # assumes that _input spatial dimensions are squares
+            mask = [] # assumes that _input spatial dimensions are squares
             diff = self.stride - self.kernel_size
             for i in range(diff):
-                _pads.append(np.arange(self.kernel_size+i, _input.shape[-1], self.stride))
-            _pads = np.concatenate(_pads).astype(int).tolist()
-            _pads = np.ix_(_pads, _pads)
+                mask.append(np.arange(self.kernel_size+i, _input.shape[-1], self.stride))
+            mask = np.concatenate(mask).astype(int).tolist()
+            mask = np.ix_(mask, mask)
 
-            y[:, :, _pads[0], :] = 0
-            y[:, :, :, _pads[1]] = 0
+            y[:, :, mask[0], :] = 0 # zero out rows
+            y[:, :, :, mask[1]] = 0 # zero out columns
 
         if self.mode == "max" or self.mode == "min":
             # apply a mask such that only the maximum or minimum value of each kernel

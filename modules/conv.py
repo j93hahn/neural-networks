@@ -1,10 +1,8 @@
-from turtle import forward
 from numpy.lib.stride_tricks import sliding_window_view, as_strided
 from module import Module
-
 import numpy as np
-import torch.nn as nn
-import torch
+#import torch.nn as nn
+#import torch
 
 
 class Conv2d(Module):
@@ -14,7 +12,7 @@ class Conv2d(Module):
         """
         Assume padding, kernel_size, and stride are all integers
 
-        Input has shape (N, C_in, H_in, W_in) and output has shape (N, C_out, H_out, W_out).
+        Input has shape (N, C_in, H_in, W_in) and output has shape (N, C_out, H_out, W_out)
             H_out = np.floor((H_in + 2*padding - kernel_size)/self.stride + 1)
             W_out = np.floor((W_in + 2*padding - kernel_size)/self.stride + 1)
         """
@@ -38,8 +36,7 @@ class Conv2d(Module):
 
         # initialize parameters here - modeled after PyTorch
         _k = groups/(in_channels * (kernel_size ** 2))
-        _sizeW = (out_channels, int(in_channels/groups), kernel_size, kernel_size)
-        self.weights = np.random.uniform(-np.sqrt(_k), np.sqrt(_k), size=_sizeW)
+        self.weights = np.random.uniform(-np.sqrt(_k), np.sqrt(_k), size=(out_channels, int(in_channels/groups), kernel_size, kernel_size))
         self.biases = np.random.uniform(-np.sqrt(_k), np.sqrt(_k), size=out_channels)
         self.gradWeights = np.zeros_like(self.weights)
         self.gradBiases = np.zeros_like(self.biases)
@@ -67,26 +64,31 @@ class Conv2d(Module):
         return "Conv2d Layer"
 
 
-"""
-The flattening module will flatten the input vector on all axes except the batch
-dimension to prepare the numbers for a linear layer (presumably on an image
-classification task).
-"""
+# flatten input vector on all axes except for the batch dimension
 class Flatten2d(Module):
     def __init__(self) -> None:
         super().__init__()
+        self.first = True
 
     def forward(self, _input):
-        ...
+        # input vector shape = (N, C, H, W), output vector shape = (N, C * H * W)
+        if self.first:
+            self.shape = _input.shape
+            self.first = False
+        _output = _input.reshape(self.shape[0], -1)
+        return _output
 
     def backward(self, _input, _gradPrev):
-        ...
+        # Unflatten2d - reshape _gradPrev into _input shape and pass backwards
+        _gradCurr = _gradPrev.reshape(self.shape)
+        return _gradCurr
 
     def params(self):
         return None, None
 
     def name(self):
         return "Flatten2d Layer"
+
 
 def test_conv2d():
     test = Conv2d(10, 8, 2, 1, padding=1)
@@ -97,5 +99,16 @@ def test_conv2d():
     test.backward(_input, 0)
 
 
+def test_flatten2d():
+    test = Flatten2d()
+    _input = np.random.randint(1, 12, size=(100, 3, 6, 6))
+    breakpoint()
+    _output = test.forward(_input)
+    breakpoint()
+    _gradOutput = test.backward(_input, _output)
+    assert _gradOutput.shape == _input.shape
+
+
 if __name__ == '__main__':
     test_conv2d()
+    #test_flatten2d()

@@ -178,6 +178,6 @@ def test_flatten2d():
 
 
 if __name__ == '__main__':
-    test_forward_conv2d()
-    #test_backward_conv2d()
+    #test_forward_conv2d()
+    test_backward_conv2d()
     #test_flatten2d()

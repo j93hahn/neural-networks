@@ -36,10 +36,14 @@ class Conv2d(Module):
         if out_channels % groups != 0:
             raise Exception("Output channels are not divisible by groups")
         self.out_channels = out_channels
+        self.groups = groups
         self.feature_count = int(in_channels/groups)
+        self.out_features = int(out_channels/groups)
 
-        self.kernel_size = kernel_size # integer type
-        self.stride = stride # integer type
+        if not isinstance(kernel_size, int) or not isinstance(stride, int):
+            raise Exception("Kernel size or stride are not of integer type")
+        self.kernel_size = kernel_size
+        self.stride = stride
 
         if pad_mode not in ["zeros", "reflect", "symmetric"]:
             raise Exception("Invalid padding mode specified")
@@ -64,17 +68,29 @@ class Conv2d(Module):
             pad_width = ((0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding))
             _input = np.pad(_input, pad_width, mode=self.pad_mode)
 
-        # Method 1 - process the batch, one image at a time
+        """
+        Algorithm: for each image in the batch, calculate feature_counts = in_channels/groups and
+        out_features = out_channels/groups. These two values determine A) how many input channels
+        to convolve with each set of filters, and B) how many filters to include in each output
+        channel. Once this is done, then for each group, take the number of input channels specified
+        in feature_counts, and convolve them with out_features number of filters. This implementation
+        relies upon the im2col and strides via vectorization techniques. Repeat this process for the
+        number of groups specified, then stack the results together (you can think of groups as
+        separate convolutions on different channels - the spatial dimensions are consistent across all
+        grouped convolutions). Finally, after processing each image, stack all images together
+        to restore the original batch_size dimension from the previous layer.
+        """
         _output = []
         for i in range(_input.shape[0]): # process each image individually
-            _windows = sliding_window_view(_input[i], window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, ::self.stride, ::self.stride]
-            _windows = _windows.reshape(self.feature_count*(self.kernel_size**2), self.out_dim**2)
-            _curr = np.dot(self.weights.reshape(self.out_channels, self.feature_count*(self.kernel_size**2)), _windows) + self.biases
-            _output.append(_curr.reshape(self.out_channels, self.out_dim, self.out_dim))
-        _output = np.stack(_output, axis=0) # stack images along batch dimension
-
-        # Method 2 - process batch through vectorization - ??
-        return _output
+            _curr = []
+            for j in range(self.groups):
+                _windows = sliding_window_view(_input[i], window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[j:j+self.feature_count, ::self.stride, ::self.stride]
+                _windows = _windows.reshape(self.feature_count*(self.kernel_size**2), self.out_dim**2)
+                _windows = np.dot(self.weights.reshape(self.out_channels, self.feature_count*(self.kernel_size**2))[j:j+self.out_features, :], _windows) + \
+                           self.biases[j:j+self.out_features, :]
+                _curr.append(_windows)
+            _output.append(np.stack(_curr, axis=0).reshape(self.out_channels, self.out_dim, self.out_dim))
+        return np.stack(_output, axis=0) # stack images along batch dimension
 
     def backward(self, _input, _gradPrev):
 
@@ -125,8 +141,7 @@ def test_forward_conv2d():
         batch_size = np.random.randint(1, 100)
         in_channels = np.random.randint(1, 20) * 24
         out_channels = np.random.randint(10, 23) * 24
-        groups = 1
-        #groups = np.random.choice((1, 2, 3, 4, 6, 8, 12, 24))
+        groups = np.random.choice((1, 2, 3, 4, 6, 8, 12, 24))
         padding = np.random.randint(0, 5)
         stride = np.random.randint(1, 10)
         kernel_size = np.random.randint(15, 22)

@@ -84,10 +84,10 @@ class Conv2d(Module):
         for i in range(_input.shape[0]): # process each image individually
             _curr = []
             for j in range(self.groups):
-                _windows = sliding_window_view(_input[i], window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[j:j+self.feature_count, ::self.stride, ::self.stride]
+                _windows = sliding_window_view(_input[i], window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[self.feature_count*j:self.feature_count*(j+1), ::self.stride, ::self.stride]
                 _windows = _windows.reshape(self.feature_count*(self.kernel_size**2), self.out_dim**2)
-                _windows = np.dot(self.weights.reshape(self.out_channels, self.feature_count*(self.kernel_size**2))[j:j+self.out_features, :], _windows) + \
-                           self.biases[j:j+self.out_features, :]
+                _windows = np.dot(self.weights.reshape(self.out_channels, self.feature_count*(self.kernel_size**2))[self.out_features*j:self.out_features*(j+1), :], _windows) + \
+                           self.biases[self.out_features*j:self.out_features*(j+1), :]
                 _curr.append(_windows)
             _output.append(np.stack(_curr, axis=0).reshape(self.out_channels, self.out_dim, self.out_dim))
         return np.stack(_output, axis=0) # stack images along batch dimension
@@ -178,6 +178,6 @@ def test_flatten2d():
 
 
 if __name__ == '__main__':
-    #test_forward_conv2d()
-    test_backward_conv2d()
+    test_forward_conv2d()
+    #test_backward_conv2d()
     #test_flatten2d()

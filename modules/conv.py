@@ -64,9 +64,7 @@ class Conv2d(Module):
         self.out_dim = np.floor((_input.shape[-1]+2*self.padding-self.kernel_size)/self.stride + 1).astype(int)
 
         # apply padding onto the input
-        if self.padding > 0:
-            pad_width = ((0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding))
-            _input = np.pad(_input, pad_width, mode=self.pad_mode)
+        _input = Conv2d.pad(_input, self.padding, self.pad_mode) if self.padding > 0 else _input
 
         """
         Algorithm: for each image in the batch, calculate feature_counts = in_channels/groups and
@@ -93,15 +91,42 @@ class Conv2d(Module):
         return np.stack(_output, axis=0) # stack images along batch dimension
 
     def backward(self, _input, _gradPrev):
+        # first, pad input vector and _gradCurr
+        _gradCurr = np.zeros_like(_input)
+        _gradCurrPad = Conv2d.pad(_gradCurr, self.padding, mode="constant") if self.padding > 0 else _gradCurr
+        _inputPad = Conv2d.pad(_input, self.padding, self.pad_mode) if self.padding > 0 else _input
 
-        self.gradWeights += ...
-        self.gradBiases += ...
+        # now, we apply "backwards" convolutions between _inputPad and _gradPrev
+        for i in range(self.out_dim):
+            v_start = self.stride * i
+            v_end = v_start + self.kernel_size
 
-        _gradCurr = ...
+            for j in range(self.out_dim):
+                h_start = self.stride * j
+                h_end = h_start + self.kernel_size
+
+                _gradCurrPad[:, :, v_start:v_end, h_start:h_end] += \
+                    np.sum(self.weights[np.newaxis, :, :, :, :] * _gradPrev[:, i:i+1, j:j+1, np.newaxis, :], axis=4)
+
+                self.gradWeights += np.sum(_gradCurrPad[:, v_start:v_end, h_start:h_end, :, np.newaxis] *
+                             _gradPrev[:, i:i+1, j:j+1, np.newaxis, :], axis=0)
+
+        # average parameter gradients across batch dimension
+        self.gradBiases += np.mean(_gradPrev.sum(axis=(-2, -1)), axis=0)
+        self.gradWeights /= _input.shape[0]
+
+        if self.padding > 0:
+            _gradCurr = _gradCurrPad[:, :, self.padding:-self.padding, self.padding:-self.padding]
+
         return _gradCurr
 
     def params(self):
         return [self.weights, self.biases], [self.gradWeights, self.gradBiases]
+
+    @staticmethod
+    def pad(_input, padding, mode):
+        pad_width = ((0, 0), (0, 0), (padding, padding), (padding, padding))
+        return np.pad(_input, pad_width=pad_width, mode=mode)
 
     def name(self):
         return "Conv2d Layer"
@@ -134,9 +159,14 @@ class Flatten2d(Module):
 
 
 def test_forward_conv2d():
+    standard = Conv2d(in_channels=2, out_channels=8, kernel_size=3, groups=1,
+                      padding=1, stride=1)
+    breakpoint()
+    standard.forward(np.arange(100*2*7*7).reshape(100, 2, 7, 7))
+
     import torch.nn as nn
     import torch
-    for i in tqdm(range(100)):
+    for _ in tqdm(range(100)):
         # generate 100 random sample architectures to test forward pass
         batch_size = np.random.randint(1, 100)
         in_channels = np.random.randint(1, 20) * 24

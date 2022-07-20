@@ -2,6 +2,10 @@ from numpy.lib.stride_tricks import sliding_window_view
 from module import Module
 from tqdm import tqdm
 import numpy as np
+import torch.nn as nn
+import torch
+
+breakpoint()
 
 
 """
@@ -82,13 +86,37 @@ class Conv2d(Module):
         for i in range(_input.shape[0]): # process each image individually
             _curr = []
             for j in range(self.groups):
-                _windows = sliding_window_view(_input[i], window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[self.feature_count*j:self.feature_count*(j+1), ::self.stride, ::self.stride]
+                _windows = sliding_window_view(_input[i], window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[j:j+self.feature_count, ::self.stride, ::self.stride]
                 _windows = _windows.reshape(self.feature_count*(self.kernel_size**2), self.out_dim**2)
-                _windows = np.dot(self.weights.reshape(self.out_channels, self.feature_count*(self.kernel_size**2))[self.out_features*j:self.out_features*(j+1), :], _windows) + \
-                           self.biases[self.out_features*j:self.out_features*(j+1), :]
+                _windows = np.dot(self.weights.reshape(self.out_channels, self.feature_count*(self.kernel_size**2))[j:j+self.out_features, :], _windows) + \
+                            self.biases[j:j+self.out_features, :]
                 _curr.append(_windows)
             _output.append(np.stack(_curr, axis=0).reshape(self.out_channels, self.out_dim, self.out_dim))
-        return np.stack(_output, axis=0) # stack images along batch dimension
+        _output = np.stack(_output, axis=0) # stack images along batch dimension
+        #breakpoint()
+        # np.einsum --> works for group_size = 1
+        if self.groups == 1:
+            # correct code
+            a = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, :, ::self.stride, ::self.stride]
+            a = a.reshape(_input.shape[0], self.feature_count*(self.kernel_size**2), self.out_dim**2)
+            b = self.weights.reshape(self.out_channels, self.feature_count*(self.kernel_size**2))
+            c = np.einsum('ijk,lj->ilk', a, b) + self.biases
+            c = c.reshape(_input.shape[0], self.out_channels, self.out_dim, self.out_dim)
+            return c
+        else:
+            _yes = []
+            for j in range(self.groups):
+                a = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, self.feature_count*j:self.feature_count*(j+1), ::self.stride, ::self.stride]
+                a = a.reshape(_input.shape[0], self.feature_count*(self.kernel_size**2), self.out_dim**2)
+                b = self.weights.reshape(self.out_channels, self.feature_count*(self.kernel_size**2))[self.out_features*j:self.out_features*(j+1), :]
+                c = np.einsum('ijk,lj->ilk', a, b) + self.biases[self.out_features*j:self.out_features*(j+1), :]
+                _yes.append(c)
+            _yes = np.stack(_yes, axis=1) # stack along out_channels dimension
+            _yes = _yes.reshape(_input.shape[0], self.out_channels, self.out_dim, self.out_dim)
+            return _yes
+        # return c
+        #breakpoint()
+        #return _output
 
     def backward(self, _input, _gradPrev):
         # first, pad input vector and _gradCurr
@@ -159,19 +187,21 @@ class Flatten2d(Module):
 
 
 def test_forward_conv2d():
-    standard = Conv2d(in_channels=2, out_channels=8, kernel_size=3, groups=1,
+    standard = Conv2d(in_channels=2, out_channels=8, kernel_size=3, groups=2,
                       padding=1, stride=1)
-    breakpoint()
+    #breakpoint()
     standard.forward(np.arange(100*2*7*7).reshape(100, 2, 7, 7))
 
     import torch.nn as nn
     import torch
     for _ in tqdm(range(100)):
+        #breakpoint()
         # generate 100 random sample architectures to test forward pass
         batch_size = np.random.randint(1, 100)
         in_channels = np.random.randint(1, 20) * 24
         out_channels = np.random.randint(10, 23) * 24
-        groups = np.random.choice((1, 2, 3, 4, 6, 8, 12, 24))
+        groups = 1
+        #groups = np.random.choice((1, 2, 3, 4, 6, 8, 12, 24))
         padding = np.random.randint(0, 5)
         stride = np.random.randint(1, 10)
         kernel_size = np.random.randint(15, 22)
@@ -187,6 +217,7 @@ def test_forward_conv2d():
 
         correct_output = correct(torch.tensor(x, dtype=torch.float)).detach().numpy()
         testing_output = testing.forward(x)
+        breakpoint()
         assert correct_output.shape == testing_output.shape
 
     print("Done testing forward pass :)")

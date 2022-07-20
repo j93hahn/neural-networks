@@ -82,6 +82,16 @@ class BatchNorm1d(Module):
         return "Batch Normalization Layer"
 
 
+class LayerNorm(Module):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+class InstanceNorm(Module):
+    def __init__(self) -> None:
+        super().__init__()
+
+
 # a project for another day --> requires spatial dimensions to the input
 class GroupNorm(Module):
     def __init__(self, channels, groups=32, eps=1e-5) -> None:

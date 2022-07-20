@@ -82,6 +82,10 @@ class Conv2d(Module):
         grouped convolutions). Finally, after processing each image, stack all images together
         to restore the original batch_size dimension from the previous layer.
         """
+
+        # correct code (?)
+        """
+        breakpoint()
         _output = []
         for i in range(_input.shape[0]): # process each image individually
             _curr = []
@@ -91,10 +95,10 @@ class Conv2d(Module):
                 _windows = np.dot(self.weights.reshape(self.out_channels, self.feature_count*(self.kernel_size**2))[j:j+self.out_features, :], _windows) + \
                             self.biases[j:j+self.out_features, :]
                 _curr.append(_windows)
-            _output.append(np.stack(_curr, axis=0).reshape(self.out_channels, self.out_dim, self.out_dim))
+            _output.append(np.concatenate(_curr, axis=0).reshape(self.out_channels, self.out_dim, self.out_dim))
+        breakpoint()
         _output = np.stack(_output, axis=0) # stack images along batch dimension
-        #breakpoint()
-        # np.einsum --> works for group_size = 1
+        """
         if self.groups == 1:
             # correct code
             a = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, :, ::self.stride, ::self.stride]
@@ -104,6 +108,7 @@ class Conv2d(Module):
             c = c.reshape(_input.shape[0], self.out_channels, self.out_dim, self.out_dim)
             return c
         else:
+            # worry about grouped convolutions later
             _yes = []
             for j in range(self.groups):
                 a = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, self.feature_count*j:self.feature_count*(j+1), ::self.stride, ::self.stride]
@@ -111,12 +116,8 @@ class Conv2d(Module):
                 b = self.weights.reshape(self.out_channels, self.feature_count*(self.kernel_size**2))[self.out_features*j:self.out_features*(j+1), :]
                 c = np.einsum('ijk,lj->ilk', a, b) + self.biases[self.out_features*j:self.out_features*(j+1), :]
                 _yes.append(c)
-            _yes = np.stack(_yes, axis=1) # stack along out_channels dimension
-            _yes = _yes.reshape(_input.shape[0], self.out_channels, self.out_dim, self.out_dim)
+            _yes = np.concatenate(_yes, axis=1).reshape(_input.shape[0], self.out_channels, self.out_dim, self.out_dim)
             return _yes
-        # return c
-        #breakpoint()
-        #return _output
 
     def backward(self, _input, _gradPrev):
         # first, pad input vector and _gradCurr
@@ -187,7 +188,7 @@ class Flatten2d(Module):
 
 
 def test_forward_conv2d():
-    standard = Conv2d(in_channels=2, out_channels=8, kernel_size=3, groups=2,
+    standard = Conv2d(in_channels=2, out_channels=8, kernel_size=3, groups=1,
                       padding=1, stride=1)
     #breakpoint()
     standard.forward(np.arange(100*2*7*7).reshape(100, 2, 7, 7))
@@ -195,7 +196,7 @@ def test_forward_conv2d():
     import torch.nn as nn
     import torch
     for _ in tqdm(range(100)):
-        #breakpoint()
+        breakpoint()
         # generate 100 random sample architectures to test forward pass
         batch_size = np.random.randint(1, 100)
         in_channels = np.random.randint(1, 20) * 24

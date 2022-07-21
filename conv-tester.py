@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch
 
 
-def test_forward2d():
+def test_forward_conv2d():
     for i in range(100):
         # generate 100 random sample architectures to test forward pass
         groups = 1
@@ -44,5 +44,14 @@ def test_forward2d():
         print(" ")
 
 
+def test_backward_conv2d():
+    standard = m.Conv2d(in_channels=1, out_channels=8, kernel_size=3, groups=1,
+                      padding=0, stride=1)
+    _input = np.arange(10*1*5*5).reshape(10, 1, 5, 5)
+    _output = standard.forward(_input)
+    _gradOutput = standard.backward(_input, _output)
+
+
 if __name__ == '__main__':
-    test_forward2d()
+    test_forward_conv2d()
+    #test_backward_conv2d()

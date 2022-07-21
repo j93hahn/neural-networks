@@ -1,11 +1,7 @@
 from numpy.lib.stride_tricks import sliding_window_view
-from module import Module
-from tqdm import tqdm
+from einops import rearrange, reduce, repeat
+from .module import Module
 import numpy as np
-import torch.nn as nn
-import torch
-
-breakpoint()
 
 
 """
@@ -23,18 +19,36 @@ Materials/documentation used to understand convolutional neural networks
 """
 class Conv2d(Module):
     def __init__(self, in_channels, out_channels, kernel_size, groups=1,
-                 stride=1, padding=0, pad_mode="zeros") -> None:
-        super().__init__()
-        """
-        Assume padding, kernel_size, and stride are all integers
+                 stride=1, padding=0, pad_mode="zeros", init_method="Uniform") -> None:
+        super(Conv2d, self).__init__()
 
-        Input has shape (N, C_in, H_in, W_in) and output has shape (N, C_out, H_out, W_out)
-            H_out = np.floor((H_in + 2*padding - kernel_size)/self.stride + 1)
-            W_out = np.floor((W_in + 2*padding - kernel_size)/self.stride + 1)
+        # initialize parameters
+        if init_method == "Zero":
+            self.weights = np.zeros((out_channels, self.feature_count, kernel_size, kernel_size))
+            self.biases = np.zeros(out_channels)
+        elif init_method == "Random":
+            self.weights = np.random.randn(out_channels, self.feature_count, kernel_size, kernel_size)
+            self.biases = np.random.randn(out_channels)
+        elif init_method == "Uniform":
+            k = groups/(in_channels * (kernel_size ** 2))
+            self.weights = np.random.uniform(-np.sqrt(k), np.sqrt(k), size=(out_channels, self.feature_count, kernel_size, kernel_size))
+            self.biases = np.random.uniform(-np.sqrt(k), np.sqrt(k), size=out_channels)
+        else:
+            raise Exception("Initialization technique not recognized.")
 
-        The ratio of in_channels to groups determines the number of input channels
-        that will be grouped per filter (or output channel).
-        """
+        # initialize gradients
+        self.gradWeights = np.zeros_like(self.weights)
+        self.gradBiases = np.zeros_like(self.biases)
+
+        # initialize hyperparameters - assume padding, kernel size, and stride are integers
+        if pad_mode not in ["zeros", "reflect", "symmetric"]:
+            raise Exception("Invalid padding mode specified")
+        self.pad_mode = "constant" if pad_mode == "zeros" else pad_mode
+        self.padding = padding
+        self.stride = stride
+        self.kernel_size = kernel_size
+
+        # initialize channel dimensions
         if in_channels % groups != 0:
             raise Exception("Input channels are not divisible by groups")
         if out_channels % groups != 0:
@@ -44,28 +58,10 @@ class Conv2d(Module):
         self.feature_count = int(in_channels/groups)
         self.out_features = int(out_channels/groups)
 
-        if not isinstance(kernel_size, int) or not isinstance(stride, int):
-            raise Exception("Kernel size or stride are not of integer type")
-        self.kernel_size = kernel_size
-        self.stride = stride
-
-        if pad_mode not in ["zeros", "reflect", "symmetric"]:
-            raise Exception("Invalid padding mode specified")
-        if not isinstance(padding, int):
-            raise Exception("Padding is not of an integral type")
-        self.padding = padding
-        self.pad_mode = "constant" if pad_mode == "zeros" else pad_mode
-
-        # initialize parameters here - modeled after PyTorch
-        _k = groups/(in_channels * (kernel_size ** 2))
-        self.weights = np.random.uniform(-np.sqrt(_k), np.sqrt(_k), size=(out_channels, self.feature_count, kernel_size, kernel_size))
-        self.biases = np.random.uniform(-np.sqrt(_k), np.sqrt(_k), size=out_channels)[:, np.newaxis]
-        self.gradWeights = np.zeros_like(self.weights)
-        self.gradBiases = np.zeros_like(self.biases)
-
     def forward(self, _input):
         # determine output spatial dimension
-        self.out_dim = np.floor((_input.shape[-1]+2*self.padding-self.kernel_size)/self.stride + 1).astype(int)
+        self.in_dim = _input.shape[-1]
+        self.out_dim = np.floor((self.in_dim+2*self.padding-self.kernel_size)/self.stride + 1).astype(int)
 
         # apply padding onto the input
         _input = Conv2d.pad(_input, self.padding, self.pad_mode) if self.padding > 0 else _input
@@ -82,29 +78,13 @@ class Conv2d(Module):
         grouped convolutions). Finally, after processing each image, stack all images together
         to restore the original batch_size dimension from the previous layer.
         """
-
-        # correct code (?)
-        """
-        breakpoint()
-        _output = []
-        for i in range(_input.shape[0]): # process each image individually
-            _curr = []
-            for j in range(self.groups):
-                _windows = sliding_window_view(_input[i], window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[j:j+self.feature_count, ::self.stride, ::self.stride]
-                _windows = _windows.reshape(self.feature_count*(self.kernel_size**2), self.out_dim**2)
-                _windows = np.dot(self.weights.reshape(self.out_channels, self.feature_count*(self.kernel_size**2))[j:j+self.out_features, :], _windows) + \
-                            self.biases[j:j+self.out_features, :]
-                _curr.append(_windows)
-            _output.append(np.concatenate(_curr, axis=0).reshape(self.out_channels, self.out_dim, self.out_dim))
-        breakpoint()
-        _output = np.stack(_output, axis=0) # stack images along batch dimension
-        """
         if self.groups == 1:
             # correct code
-            a = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, :, ::self.stride, ::self.stride]
-            a = a.reshape(_input.shape[0], self.feature_count*(self.kernel_size**2), self.out_dim**2)
-            b = self.weights.reshape(self.out_channels, self.feature_count*(self.kernel_size**2))
-            c = np.einsum('ijk,lj->ilk', a, b) + self.biases
+            a = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, :, ::self.stride, ::self.stride] # N x C_in x H_out x W_out x k x k
+            a = rearrange(a, 'n c h w k l -> n (c k l) (h w)')
+            b = rearrange(self.weights, 'o f k l -> o (f k l)')
+            c = np.einsum('ijk,lj->ilk', a, b)
+            c += self.biases[np.newaxis, :, np.newaxis]
             c = c.reshape(_input.shape[0], self.out_channels, self.out_dim, self.out_dim)
             return c
         else:
@@ -121,31 +101,30 @@ class Conv2d(Module):
 
     def backward(self, _input, _gradPrev):
         # first, pad input vector and _gradCurr
-        _gradCurr = np.zeros_like(_input)
-        _gradCurrPad = Conv2d.pad(_gradCurr, self.padding, mode="constant") if self.padding > 0 else _gradCurr
-        _inputPad = Conv2d.pad(_input, self.padding, self.pad_mode) if self.padding > 0 else _input
-
+        da_prev = np.zeros_like(_input, dtype=np.float64)
+        da_prev_pad = Conv2d.pad(da_prev, self.padding, mode="constant") if self.padding > 0 else _gradCurr
+        a_prev_pad = Conv2d.pad(_input, self.padding, mode="constant") if self.padding > 0 else _input
+        dz = _gradPrev
         # now, we apply "backwards" convolutions between _inputPad and _gradPrev
-        for i in range(self.out_dim):
+        for i in range(self.out_dim): # go down the height dimension
             v_start = self.stride * i
             v_end = v_start + self.kernel_size
 
-            for j in range(self.out_dim):
+            for j in range(self.out_dim): # go across the width dimension
                 h_start = self.stride * j
                 h_end = h_start + self.kernel_size
+                # sum along out_channels dimension
+                da_prev_pad[:, :, v_start:v_end, h_start:h_end] += np.sum(self.weights[np.newaxis, :, :, :, :] * dz[:, :, np.newaxis, i:i+1, j:j+1], axis=1)
 
-                _gradCurrPad[:, :, v_start:v_end, h_start:h_end] += \
-                    np.sum(self.weights[np.newaxis, :, :, :, :] * _gradPrev[:, i:i+1, j:j+1, np.newaxis, :], axis=4)
-
-                self.gradWeights += np.sum(_gradCurrPad[:, v_start:v_end, h_start:h_end, :, np.newaxis] *
-                             _gradPrev[:, i:i+1, j:j+1, np.newaxis, :], axis=0)
+                # sum along batch dimension
+                self.gradWeights += np.sum(a_prev_pad[:, np.newaxis, :, v_start:v_end, h_start:h_end] * dz[:, :, np.newaxis, i:i+1, j:j+1], axis=0)
 
         # average parameter gradients across batch dimension
-        self.gradBiases += np.mean(_gradPrev.sum(axis=(-2, -1)), axis=0)
-        self.gradWeights /= _input.shape[0]
+        self.gradBiases += np.mean(_gradPrev.sum(axis=(-2, -1)), axis=0)[:, np.newaxis]
+        self.gradWeights /= _input.shape[0] # divide by batch amount
 
         if self.padding > 0:
-            _gradCurr = _gradCurrPad[:, :, self.padding:-self.padding, self.padding:-self.padding]
+            _gradCurr = da_prev_pad[:, :, self.padding:-self.padding, self.padding:-self.padding]
 
         return _gradCurr
 
@@ -168,12 +147,13 @@ class Flatten2d(Module):
         self.first = True
 
     def forward(self, _input):
-        # input vector shape = (N, C, H, W), output vector shape = (N, C * H * W)
-        if self.first: # input shape will always be the same across all batches
-            self.shape = _input.shape
-            self.first = False
-        _output = _input.reshape(self.shape[0], -1)
-        return _output
+        if self.train:
+            if self.first:
+                self.shape = _input.shape
+                self.first = False
+            return _input.reshape(self.shape[0], -1)
+        if not self.train:
+            return _input.reshape(1, -1)
 
     def backward(self, _input, _gradPrev):
         # Unflatten2d - reshape _gradPrev into _input shape and pass backwards
@@ -187,46 +167,15 @@ class Flatten2d(Module):
         return "Flatten2d Layer"
 
 
-def test_forward_conv2d():
-    standard = Conv2d(in_channels=2, out_channels=8, kernel_size=3, groups=1,
-                      padding=1, stride=1)
-    #breakpoint()
-    standard.forward(np.arange(100*2*7*7).reshape(100, 2, 7, 7))
-
-    import torch.nn as nn
-    import torch
-    for _ in tqdm(range(100)):
-        breakpoint()
-        # generate 100 random sample architectures to test forward pass
-        batch_size = np.random.randint(1, 100)
-        in_channels = np.random.randint(1, 20) * 24
-        out_channels = np.random.randint(10, 23) * 24
-        groups = 1
-        #groups = np.random.choice((1, 2, 3, 4, 6, 8, 12, 24))
-        padding = np.random.randint(0, 5)
-        stride = np.random.randint(1, 10)
-        kernel_size = np.random.randint(15, 22)
-
-        correct = nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
-                            kernel_size=kernel_size,
-                            groups=groups, padding=padding, stride=stride)
-        testing = Conv2d(in_channels=in_channels, out_channels=out_channels,
-                            kernel_size=kernel_size,
-                            groups=groups, padding=padding, stride=stride)
-        x = np.arange(batch_size*in_channels*kernel_size*kernel_size).reshape(
-                      batch_size, in_channels, kernel_size, kernel_size)
-
-        correct_output = correct(torch.tensor(x, dtype=torch.float)).detach().numpy()
-        testing_output = testing.forward(x)
-        breakpoint()
-        assert correct_output.shape == testing_output.shape
-
-    print("Done testing forward pass :)")
-
-
 def test_backward_conv2d():
-    import torch.nn as nn
-    import torch
+    #import torch.nn as nn
+    #import torch
+    standard = Conv2d(in_channels=1, out_channels=8, kernel_size=3, groups=1,
+                      padding=0, stride=1)
+    _input = np.arange(10*1*5*5).reshape(10, 1, 5, 5)
+    _output = standard.forward(_input)
+    breakpoint()
+    _gradOutput = standard.backward(_input, _output)
 
 
 def test_flatten2d():
@@ -240,6 +189,6 @@ def test_flatten2d():
 
 
 if __name__ == '__main__':
-    test_forward_conv2d()
-    #test_backward_conv2d()
+    #test_forward_conv2d()
+    test_backward_conv2d()
     #test_flatten2d()

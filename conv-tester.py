@@ -5,15 +5,14 @@ import torch
 
 
 def test_forward_conv2d():
-    for i in range(100):
-        # generate 100 random sample architectures to test forward pass
-        groups = 1
+    for i in range(100): # generate 100 random sample architectures to test forward pass
         batch_size = np.random.randint(1, 100)
-        in_channels = np.random.randint(10, 20) #15
-        out_channels = np.random.randint(10, 20) #10
-        padding = np.random.randint(0, 5) #4
-        stride = np.random.randint(1, 4) #1
-        kernel_size = np.random.randint(1, 9) #6
+        in_channels = np.random.randint(10, 20)
+        out_channels = np.random.randint(10, 20)
+        padding = np.random.randint(0, 5)
+        stride = np.random.randint(1, 4)
+        kernel_size = np.random.randint(1, 9)
+        groups = 1
 
         k = groups/(in_channels * (kernel_size ** 2))
         _w = np.random.uniform(-np.sqrt(k), np.sqrt(k), size=(out_channels, in_channels, kernel_size, kernel_size))

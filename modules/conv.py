@@ -73,28 +73,13 @@ class Conv2d(Module):
         # im2col and strides vectorization techniques
         if self.groups == 1:
             _windows = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, :, ::self.stride, ::self.stride]
-            #_windows = rearrange(_windows, 'n c_in h w kh kw -> n (c_in kh kw) (h w)') # N, C_in, H_out, W_out, k, k -> N, C_in*k*k, H_out*W_out
-            #_weights = rearrange(self.weights, 'c_out c_in kh kw -> c_out (c_in kh kw)')
-            #_output = np.einsum('ijk,lj->ilk', _windows, _weights) + self.biases[:, np.newaxis] # preserve batch dimension
-            #return _output.reshape(_input.shape[0], self.out_channels, self.out_spatial_dim, self.out_spatial_dim) # reshape to output dimensions
             _windows = rearrange(_windows, 'n c_in h w kh kw -> n h w (c_in kh kw)')
             _weights = rearrange(self.weights, 'c_out c_in kh kw -> c_out (c_in kh kw)')
-            _output = np.einsum('n h w q, c q -> n c h w', _windows, _weights)
+            _output = np.einsum('n h w q, c q -> n c h w', _windows, _weights) # q is the collapsed dimension
             _biases = rearrange(self.biases, 'c_out -> 1 c_out 1 1')
-            _output += _biases
-            return _output
-        """
+            return _output + _biases
         else: # grouped convolutions
-            _yes = []
-            for j in range(self.groups):
-                a = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, self.feature_count*j:self.feature_count*(j+1), ::self.stride, ::self.stride]
-                a = a.reshape(_input.shape[0], self.feature_count*(self.kernel_size**2), self.out_spatial_dim**2)
-                b = self.weights.reshape(self.out_channels, self.feature_count*(self.kernel_size**2))[self.out_features*j:self.out_features*(j+1), :]
-                c = np.einsum('ijk,lj->ilk', a, b) + self.biases[self.out_features*j:self.out_features*(j+1), :]
-                _yes.append(c)
-            _yes = np.concatenate(_yes, axis=1).reshape(_input.shape[0], self.out_channels, self.out_spatial_dim, self.out_spatial_dim)
-            return _yes
-        """
+            ...
 
     def backward(self, _input, _gradPrev):
         # first, pad input vector and _gradCurr
@@ -117,7 +102,7 @@ class Conv2d(Module):
                 self.gradWeights += np.sum(a_prev_pad[:, np.newaxis, :, v_start:v_end, h_start:h_end] * dz[:, :, np.newaxis, i:i+1, j:j+1], axis=0)
 
         # average parameter gradients across batch dimension
-        self.gradBiases += np.mean(_gradPrev.sum(axis=(-2, -1)), axis=0)[:, np.newaxis]
+        self.gradBiases += np.mean(_gradPrev.sum(axis=(-2, -1)), axis=0)
         self.gradWeights /= _input.shape[0] # divide by batch amount
 
         if self.padding > 0:
@@ -153,12 +138,3 @@ class Flatten2d(Module):
 
     def name(self):
         return "Flatten2d Layer"
-
-
-def test_backward_conv2d():
-    standard = Conv2d(in_channels=1, out_channels=8, kernel_size=3, groups=1,
-                      padding=0, stride=1)
-    _input = np.arange(10*1*5*5).reshape(10, 1, 5, 5)
-    _output = standard.forward(_input)
-    breakpoint()
-    _gradOutput = standard.backward(_input, _output)

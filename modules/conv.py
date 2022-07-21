@@ -1,5 +1,5 @@
 from numpy.lib.stride_tricks import sliding_window_view
-from einops import rearrange, reduce, repeat
+from einops import rearrange
 from .module import Module
 import numpy as np
 
@@ -21,6 +21,17 @@ class Conv2d(Module):
     def __init__(self, in_channels, out_channels, kernel_size, groups=1,
                  stride=1, padding=0, pad_mode="zeros", init_method="Uniform") -> None:
         super(Conv2d, self).__init__()
+
+        # initialize channel dimensions
+        if in_channels % groups != 0:
+            raise Exception("Input channels are not divisible by groups")
+        if out_channels % groups != 0:
+            raise Exception("Output channels are not divisible by groups")
+        self.out_channels = out_channels
+        self.groups = groups
+        self.feature_count = int(in_channels/groups)
+        self.out_features = int(out_channels/groups)
+        self.out_spatial_dim = -1
 
         # initialize parameters
         if init_method == "Zero":
@@ -48,57 +59,35 @@ class Conv2d(Module):
         self.stride = stride
         self.kernel_size = kernel_size
 
-        # initialize channel dimensions
-        if in_channels % groups != 0:
-            raise Exception("Input channels are not divisible by groups")
-        if out_channels % groups != 0:
-            raise Exception("Output channels are not divisible by groups")
-        self.out_channels = out_channels
-        self.groups = groups
-        self.feature_count = int(in_channels/groups)
-        self.out_features = int(out_channels/groups)
-
     def forward(self, _input):
-        # determine output spatial dimension
-        self.in_dim = _input.shape[-1]
-        self.out_dim = np.floor((self.in_dim+2*self.padding-self.kernel_size)/self.stride + 1).astype(int)
+        # calculate output spatial dimensions
+        if self.out_spatial_dim == -1:
+            self.out_spatial_dim = np.floor((_input.shape[-1] + 2*self.padding - self.kernel_size)/self.stride + 1).astype(int)
+            assert self.out_spatial_dim > 0
 
-        # apply padding onto the input
+        # pad the input if necessary
         _input = Conv2d.pad(_input, self.padding, self.pad_mode) if self.padding > 0 else _input
 
-        """
-        Algorithm: for each image in the batch, calculate feature_counts = in_channels/groups and
-        out_features = out_channels/groups. These two values determine A) how many input channels
-        to convolve with each set of filters, and B) how many filters to include in each output
-        channel. Once this is done, then for each group, take the number of input channels specified
-        in feature_counts, and convolve them with out_features number of filters. This implementation
-        relies upon the im2col and strides via vectorization techniques. Repeat this process for the
-        number of groups specified, then stack the results together (you can think of groups as
-        separate convolutions on different channels - the spatial dimensions are consistent across all
-        grouped convolutions). Finally, after processing each image, stack all images together
-        to restore the original batch_size dimension from the previous layer.
-        """
+        # im2col and strides vectorization techniques
         if self.groups == 1:
-            # correct code
-            a = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, :, ::self.stride, ::self.stride] # N x C_in x H_out x W_out x k x k
-            a = rearrange(a, 'n c h w k l -> n (c k l) (h w)')
-            b = rearrange(self.weights, 'o f k l -> o (f k l)')
-            c = np.einsum('ijk,lj->ilk', a, b)
-            c += self.biases[np.newaxis, :, np.newaxis]
-            c = c.reshape(_input.shape[0], self.out_channels, self.out_dim, self.out_dim)
-            return c
-        else:
-            # worry about grouped convolutions later
+            _windows = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, :, ::self.stride, ::self.stride]
+            _windows = rearrange(_windows, 'n c h w k l -> n (c k l) (h w)') # N, C_in, H_out, W_out, k, k -> N, C_in*k*k, H_out*W_out
+            _weights = rearrange(self.weights, 'o f k l -> o (f k l)') # f = self.feature_count
+            _output = np.einsum('ijk,lj->ilk', _windows, _weights) + self.biases[np.newaxis, :, np.newaxis] # preserve batch dimension
+            return _output.reshape(_input.shape[0], self.out_channels, self.out_spatial_dim, self.out_spatial_dim) # reshape to output dimensions
+        """
+        else: # grouped convolutions
             _yes = []
             for j in range(self.groups):
                 a = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, self.feature_count*j:self.feature_count*(j+1), ::self.stride, ::self.stride]
-                a = a.reshape(_input.shape[0], self.feature_count*(self.kernel_size**2), self.out_dim**2)
+                a = a.reshape(_input.shape[0], self.feature_count*(self.kernel_size**2), self.out_spatial_dim**2)
                 b = self.weights.reshape(self.out_channels, self.feature_count*(self.kernel_size**2))[self.out_features*j:self.out_features*(j+1), :]
                 c = np.einsum('ijk,lj->ilk', a, b) + self.biases[self.out_features*j:self.out_features*(j+1), :]
                 _yes.append(c)
-            _yes = np.concatenate(_yes, axis=1).reshape(_input.shape[0], self.out_channels, self.out_dim, self.out_dim)
+            _yes = np.concatenate(_yes, axis=1).reshape(_input.shape[0], self.out_channels, self.out_spatial_dim, self.out_spatial_dim)
             return _yes
-
+        """
+        
     def backward(self, _input, _gradPrev):
         # first, pad input vector and _gradCurr
         da_prev = np.zeros_like(_input, dtype=np.float64)
@@ -106,11 +95,11 @@ class Conv2d(Module):
         a_prev_pad = Conv2d.pad(_input, self.padding, mode="constant") if self.padding > 0 else _input
         dz = _gradPrev
         # now, we apply "backwards" convolutions between _inputPad and _gradPrev
-        for i in range(self.out_dim): # go down the height dimension
+        for i in range(self.out_spatial_dim): # go down the height dimension
             v_start = self.stride * i
             v_end = v_start + self.kernel_size
 
-            for j in range(self.out_dim): # go across the width dimension
+            for j in range(self.out_spatial_dim): # go across the width dimension
                 h_start = self.stride * j
                 h_end = h_start + self.kernel_size
                 # sum along out_channels dimension
@@ -140,25 +129,16 @@ class Conv2d(Module):
         return "Conv2d Layer"
 
 
-# flatten input vector on all axes except for the batch dimension
 class Flatten2d(Module):
     def __init__(self) -> None:
         super().__init__()
         self.first = True
 
-    def forward(self, _input):
-        if self.train:
-            if self.first:
-                self.shape = _input.shape
-                self.first = False
-            return _input.reshape(self.shape[0], -1)
-        if not self.train:
-            return _input.reshape(1, -1)
+    def forward(self, _input): # flatten to batch dimension
+        return _input.reshape(_input.shape[0], -1)
 
     def backward(self, _input, _gradPrev):
-        # Unflatten2d - reshape _gradPrev into _input shape and pass backwards
-        _gradCurr = _gradPrev.reshape(self.shape)
-        return _gradCurr
+        return _gradPrev.reshape(_input.shape)
 
     def params(self):
         return None, None
@@ -176,19 +156,3 @@ def test_backward_conv2d():
     _output = standard.forward(_input)
     breakpoint()
     _gradOutput = standard.backward(_input, _output)
-
-
-def test_flatten2d():
-    test = Flatten2d()
-    _input = np.random.randint(1, 12, size=(100, 3, 6, 6))
-    breakpoint()
-    _output = test.forward(_input)
-    breakpoint()
-    _gradOutput = test.backward(_input, _output)
-    assert _gradOutput.shape == _input.shape
-
-
-if __name__ == '__main__':
-    #test_forward_conv2d()
-    test_backward_conv2d()
-    #test_flatten2d()

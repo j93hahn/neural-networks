@@ -18,7 +18,7 @@ Materials/documentation used to understand convolutional neural networks
     - https://pavisj.medium.com/convolutions-and-backpropagations-46026a8f5d2c
 """
 class Conv2d(Module):
-    def __init__(self, in_channels, out_channels, kernel_size, groups=1,
+    def __init__(self, in_channels, out_channels, kernel_size, _w, _b, groups=1,
                  stride=1, padding=0, pad_mode="zeros", init_method="Uniform") -> None:
         super(Conv2d, self).__init__()
 
@@ -41,9 +41,11 @@ class Conv2d(Module):
             self.weights = np.random.randn(out_channels, self.feature_count, kernel_size, kernel_size)
             self.biases = np.random.randn(out_channels)
         elif init_method == "Uniform":
-            k = groups/(in_channels * (kernel_size ** 2))
-            self.weights = np.random.uniform(-np.sqrt(k), np.sqrt(k), size=(out_channels, self.feature_count, kernel_size, kernel_size))
-            self.biases = np.random.uniform(-np.sqrt(k), np.sqrt(k), size=out_channels)
+            self.weights = _w
+            self.biases = _b
+            #k = groups/(in_channels * (kernel_size ** 2))
+            #self.weights = np.random.uniform(-np.sqrt(k), np.sqrt(k), size=(out_channels, self.feature_count, kernel_size, kernel_size))
+            #self.biases = np.random.uniform(-np.sqrt(k), np.sqrt(k), size=out_channels)
         else:
             raise Exception("Initialization technique not recognized.")
 
@@ -71,10 +73,16 @@ class Conv2d(Module):
         # im2col and strides vectorization techniques
         if self.groups == 1:
             _windows = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, :, ::self.stride, ::self.stride]
-            _windows = rearrange(_windows, 'n c h w k l -> n (c k l) (h w)') # N, C_in, H_out, W_out, k, k -> N, C_in*k*k, H_out*W_out
-            _weights = rearrange(self.weights, 'o f k l -> o (f k l)') # f = self.feature_count
-            _output = np.einsum('ijk,lj->ilk', _windows, _weights) + self.biases[np.newaxis, :, np.newaxis] # preserve batch dimension
-            return _output.reshape(_input.shape[0], self.out_channels, self.out_spatial_dim, self.out_spatial_dim) # reshape to output dimensions
+            #_windows = rearrange(_windows, 'n c_in h w kh kw -> n (c_in kh kw) (h w)') # N, C_in, H_out, W_out, k, k -> N, C_in*k*k, H_out*W_out
+            #_weights = rearrange(self.weights, 'c_out c_in kh kw -> c_out (c_in kh kw)')
+            #_output = np.einsum('ijk,lj->ilk', _windows, _weights) + self.biases[:, np.newaxis] # preserve batch dimension
+            #return _output.reshape(_input.shape[0], self.out_channels, self.out_spatial_dim, self.out_spatial_dim) # reshape to output dimensions
+            _windows = rearrange(_windows, 'n c_in h w kh kw -> n h w (c_in kh kw)')
+            _weights = rearrange(self.weights, 'c_out c_in kh kw -> c_out (c_in kh kw)')
+            _output = np.einsum('n h w q, c q -> n c h w', _windows, _weights)
+            _biases = rearrange(self.biases, 'c_out -> 1 c_out 1 1')
+            _output += _biases
+            return _output
         """
         else: # grouped convolutions
             _yes = []
@@ -87,7 +95,7 @@ class Conv2d(Module):
             _yes = np.concatenate(_yes, axis=1).reshape(_input.shape[0], self.out_channels, self.out_spatial_dim, self.out_spatial_dim)
             return _yes
         """
-        
+
     def backward(self, _input, _gradPrev):
         # first, pad input vector and _gradCurr
         da_prev = np.zeros_like(_input, dtype=np.float64)
@@ -148,8 +156,6 @@ class Flatten2d(Module):
 
 
 def test_backward_conv2d():
-    #import torch.nn as nn
-    #import torch
     standard = Conv2d(in_channels=1, out_channels=8, kernel_size=3, groups=1,
                       padding=0, stride=1)
     _input = np.arange(10*1*5*5).reshape(10, 1, 5, 5)

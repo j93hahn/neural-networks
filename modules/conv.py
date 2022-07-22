@@ -16,7 +16,7 @@ Materials/documentation used to understand convolutional neural networks
 
 3] Backpropagation
     - https://pavisj.medium.com/convolutions-and-backpropagations-46026a8f5d2c
-    - https://blog.ca.meron.dev/Vectorized-CNN/
+    - https://github.com/SkalskiP/ILearnDeepLearning.py/blob/master/01_mysteries_of_neural_networks/06_numpy_convolutional_neural_net/src/layers/convolutional.py
 """
 class Conv2d(Module):
     def __init__(self, in_channels, out_channels, kernel_size, _w, _b, groups=1,
@@ -120,12 +120,9 @@ class Conv2d(Module):
 
         # average parameter gradients across batch dimension
         self.gradWeights /= _input.shape[0] # divide by batch amount
-        test2 /= _input.shape[0]
 
         if self.padding > 0:
             _gradCurr = _gradCurr[:, :, self.padding:-self.padding, self.padding:-self.padding]
-            test = test[:, :, self.padding:-self.padding, self.padding:-self.padding]
-        breakpoint()
         """
 
     def params(self):

@@ -72,7 +72,7 @@ def viz_gradients(experiment):
 
         ax_objs.append(fig.add_subplot(gs[weights.shape[0]-1-epoch:weights.shape[0]-epoch, 0:]))
         ax_objs[-1].plot(x_d, y_d, color=outline, lw=1)
-        ax_objs[-1].fill_between(x_d, y_d, alpha=0, color=color)
+        ax_objs[-1].fill_between(x_d, y_d, alpha=0.2, color=color)
 
         ax_objs[-1].set_xlim(x_low, x_high)
 
@@ -98,12 +98,12 @@ def viz_gradients(experiment):
     gs.update(hspace=-0.9)
     fig.suptitle("Distribution of Gradients for Random Initialization", fontweight='bold', fontsize=15, y=0.92)
     # plt.title("Distribution of Gradients for Zeros Initialization", fontweight='bold', fontsize=15)
-    #plt.savefig("random_init_gradients.pdf")
+    plt.savefig("random_init_gradients.pdf")
     # plt.tight_layout()
     #plt.show()
 
 
 if __name__ == '__main__':
     #viz_test_losses(experiments)
-    viz_train_losses(experiments)
+    #viz_train_losses(experiments)
     viz_gradients(B)

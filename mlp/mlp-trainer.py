@@ -23,7 +23,7 @@ def training(model, loss, optimizer, scheduler, grad_type="Mini-Batch"):
     model.train()
 
     if grad_type == "Mini-Batch":
-        epochs = 45
+        epochs = 60
         batch_size = 100
         T = int(train_data.shape[0]/batch_size)
         ii = np.arange(0, T)

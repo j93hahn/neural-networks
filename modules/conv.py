@@ -16,6 +16,7 @@ Materials/documentation used to understand convolutional neural networks
 
 3] Backpropagation
     - https://pavisj.medium.com/convolutions-and-backpropagations-46026a8f5d2c
+    - https://blog.ca.meron.dev/Vectorized-CNN/
 """
 class Conv2d(Module):
     def __init__(self, in_channels, out_channels, kernel_size, _w, _b, groups=1,
@@ -47,7 +48,7 @@ class Conv2d(Module):
             #self.weights = np.random.uniform(-np.sqrt(k), np.sqrt(k), size=(out_channels, self.feature_count, kernel_size, kernel_size))
             #self.biases = np.random.uniform(-np.sqrt(k), np.sqrt(k), size=out_channels)
         else:
-            raise Exception("Initialization technique not recognized.")
+            raise Exception("Initialization technique not recognized")
 
         # initialize gradients
         self.gradWeights = np.zeros_like(self.weights)
@@ -72,8 +73,8 @@ class Conv2d(Module):
 
         # im2col and strides vectorization techniques
         if self.groups == 1:
-            _windows = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, :, ::self.stride, ::self.stride]
-            _windows = rearrange(_windows, 'n c_in h w kh kw -> n h w (c_in kh kw)')
+            self._inputWindows = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, :, ::self.stride, ::self.stride]
+            _windows = rearrange(self._inputWindows, 'n c_in h w kh kw -> n h w (c_in kh kw)')
             _weights = rearrange(self.weights, 'c_out c_in kh kw -> c_out (c_in kh kw)')
             _output = np.einsum('n h w q, c q -> n c h w', _windows, _weights) # q is the collapsed dimension
             _biases = rearrange(self.biases, 'c_out -> 1 c_out 1 1')
@@ -82,12 +83,26 @@ class Conv2d(Module):
             ...
 
     def backward(self, _input, _gradPrev):
-        # first, pad input vector and _gradCurr
-        da_prev = np.zeros_like(_input, dtype=np.float64)
-        da_prev_pad = Conv2d.pad(da_prev, self.padding, mode="constant") if self.padding > 0 else _gradCurr
-        a_prev_pad = Conv2d.pad(_input, self.padding, mode="constant") if self.padding > 0 else _input
-        dz = _gradPrev
-        # now, we apply "backwards" convolutions between _inputPad and _gradPrev
+        # calculate parameter gradients
+        self.gradWeights += np.einsum('n i h w k l, n o h w -> o i k l', self._inputWindows, _gradPrev) / _input.shape[0]
+        self.gradBiases += np.mean(_gradPrev.sum(axis=(-2, -1)), axis=0)
+
+#dout_windows = getWindows(dout, x.shape, self.kernel_size, padding=padding, stride=1)
+        # convolve the adjoint with a rotated kernel to produce _gradCurr
+        if self.groups == 1:
+            breakpoint()
+            _padding = self.kernel_size + 1 if self.padding == 0 else self.padding
+            _gradPrev = Conv2d.pad(_gradPrev, _padding, "constant")
+
+            _gradPrevWindows = sliding_window_view(_gradPrev, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, :, ::self.stride, ::self.stride]
+            _rotKernel = np.rot90(self.weights, 2, axes=(-2, -1))
+            _gradCurr = np.einsum('n o h w k l, o i k l -> n i h w', _gradPrevWindows, _rotKernel)
+            #assert _gradCurr.shape == _input.shape
+            return _gradCurr
+        else: # grouped convolutions
+            ...
+
+        """
         for i in range(self.out_spatial_dim): # go down the height dimension
             v_start = self.stride * i
             v_end = v_start + self.kernel_size
@@ -96,19 +111,20 @@ class Conv2d(Module):
                 h_start = self.stride * j
                 h_end = h_start + self.kernel_size
                 # sum along out_channels dimension
-                da_prev_pad[:, :, v_start:v_end, h_start:h_end] += np.sum(self.weights[np.newaxis, :, :, :, :] * dz[:, :, np.newaxis, i:i+1, j:j+1], axis=1)
+                _gradCurr[:, :, v_start:v_end, h_start:h_end] += np.sum(self.weights[np.newaxis, :, :, :, :] * _gradPrev[:, :, np.newaxis, i:i+1, j:j+1], axis=1)
 
                 # sum along batch dimension
-                self.gradWeights += np.sum(a_prev_pad[:, np.newaxis, :, v_start:v_end, h_start:h_end] * dz[:, :, np.newaxis, i:i+1, j:j+1], axis=0)
+                self.gradWeights += np.sum(_input[:, np.newaxis, :, v_start:v_end, h_start:h_end] * _gradPrev[:, :, np.newaxis, i:i+1, j:j+1], axis=0)
 
         # average parameter gradients across batch dimension
-        self.gradBiases += np.mean(_gradPrev.sum(axis=(-2, -1)), axis=0)
         self.gradWeights /= _input.shape[0] # divide by batch amount
+        test2 /= _input.shape[0]
 
         if self.padding > 0:
-            _gradCurr = da_prev_pad[:, :, self.padding:-self.padding, self.padding:-self.padding]
-
-        return _gradCurr
+            _gradCurr = _gradCurr[:, :, self.padding:-self.padding, self.padding:-self.padding]
+            test = test[:, :, self.padding:-self.padding, self.padding:-self.padding]
+        breakpoint()
+        """
 
     def params(self):
         return [self.weights, self.biases], [self.gradWeights, self.gradBiases]
@@ -128,7 +144,7 @@ class Flatten2d(Module):
         self.first = True
 
     def forward(self, _input): # flatten to batch dimension
-        return _input.reshape(_input.shape[0], -1)
+        return rearrange(_input, 'n c h w -> n (c h w)')
 
     def backward(self, _input, _gradPrev):
         return _gradPrev.reshape(_input.shape)

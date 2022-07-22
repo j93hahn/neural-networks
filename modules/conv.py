@@ -87,17 +87,19 @@ class Conv2d(Module):
         self.gradWeights += np.einsum('n i h w k l, n o h w -> o i k l', self._inputWindows, _gradPrev) / _input.shape[0]
         self.gradBiases += np.mean(_gradPrev.sum(axis=(-2, -1)), axis=0)
 
-#dout_windows = getWindows(dout, x.shape, self.kernel_size, padding=padding, stride=1)
         # convolve the adjoint with a rotated kernel to produce _gradCurr
         if self.groups == 1:
-            breakpoint()
-            _padding = self.kernel_size + 1 if self.padding == 0 else self.padding
+            #breakpoint()
+            if self.padding == 0:
+                _padding = self.kernel_size - 1
+            else:
+                _padding = self.kernel_size - 2 * self.padding
+            #_padding = self.kernel_size - 1 if self.padding == 0 else self.padding*2 + 1
             _gradPrev = Conv2d.pad(_gradPrev, _padding, "constant")
 
             _gradPrevWindows = sliding_window_view(_gradPrev, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, :, ::self.stride, ::self.stride]
             _rotKernel = np.rot90(self.weights, 2, axes=(-2, -1))
             _gradCurr = np.einsum('n o h w k l, o i k l -> n i h w', _gradPrevWindows, _rotKernel)
-            #assert _gradCurr.shape == _input.shape
             return _gradCurr
         else: # grouped convolutions
             ...

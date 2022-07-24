@@ -42,7 +42,7 @@ def training(model, loss, optimizer, scheduler):
             model.backward(prediction, loss.backward(actual))
             optimizer.step()
         scheduler.step()
-    torch.save(model, 'conv/model.pt')
+    torch.save(model, 'conv/optimal.pt')
 
 
 def inference(model):
@@ -76,7 +76,7 @@ def main():
     training(model, loss, optimizer, scheduler)
     print("Training completed, now beginning inference...")
 
-    trained_model = torch.load('conv/model.pt')
+    trained_model = torch.load('conv/optimal.pt')
     inference(trained_model)
 
 

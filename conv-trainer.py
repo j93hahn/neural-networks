@@ -42,7 +42,7 @@ def training(model, loss, optimizer, scheduler):
             model.backward(prediction, loss.backward(actual))
             optimizer.step()
         scheduler.step()
-    torch.save(model, 'conv/optimal.pt')
+    torch.save(model, 'conv/model.pt')
 
 
 def inference(model):
@@ -60,14 +60,9 @@ def main():
     model = m.Sequential(
         m.Conv2d(in_channels=1, out_channels=8, kernel_size=3, padding=1, stride=1),
         m.ReLU(),
-        m.Conv2d(in_channels=8, out_channels=8, kernel_size=3, padding=1, stride=1),
-        m.ReLU(),
         m.Pooling2d(kernel_size=2, stride=2, mode="max"),
-        m.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1, stride=1),
-        m.ReLU(),
-        m.Pooling2d(kernel_size=2, stride=2, mode="avg"),
         m.Flatten2d(),
-        m.Linear(in_features=784, out_features=10)
+        m.Linear(in_features=1568, out_features=10)
     )
 
     loss = m.SoftMaxLoss()
@@ -76,7 +71,7 @@ def main():
     training(model, loss, optimizer, scheduler)
     print("Training completed, now beginning inference...")
 
-    trained_model = torch.load('conv/optimal.pt')
+    trained_model = torch.load('conv/model.pt')
     inference(trained_model)
 
 

@@ -19,7 +19,7 @@ Materials/documentation used to understand convolutional neural networks
     - https://github.com/SkalskiP/ILearnDeepLearning.py/blob/master/01_mysteries_of_neural_networks/06_numpy_convolutional_neural_net/src/layers/convolutional.py
 """
 class Conv2d(Module):
-    def __init__(self, in_channels, out_channels, kernel_size, _w, _b, groups=1,
+    def __init__(self, in_channels, out_channels, kernel_size, groups=1,
                  stride=1, padding=0, pad_mode="zeros", init_method="Uniform") -> None:
         super(Conv2d, self).__init__()
 
@@ -29,9 +29,7 @@ class Conv2d(Module):
         if out_channels % groups != 0:
             raise Exception("Output channels are not divisible by groups")
         self.out_channels = out_channels
-        self.groups = groups
         self.feature_count = int(in_channels/groups)
-        self.out_features = int(out_channels/groups)
         self.out_spatial_dim = -1
 
         # initialize parameters
@@ -42,11 +40,9 @@ class Conv2d(Module):
             self.weights = np.random.randn(out_channels, self.feature_count, kernel_size, kernel_size)
             self.biases = np.random.randn(out_channels)
         elif init_method == "Uniform":
-            self.weights = _w
-            self.biases = _b
-            #k = groups/(in_channels * (kernel_size ** 2))
-            #self.weights = np.random.uniform(-np.sqrt(k), np.sqrt(k), size=(out_channels, self.feature_count, kernel_size, kernel_size))
-            #self.biases = np.random.uniform(-np.sqrt(k), np.sqrt(k), size=out_channels)
+            k = groups/(in_channels * (kernel_size ** 2))
+            self.weights = np.random.uniform(-np.sqrt(k), np.sqrt(k), size=(out_channels, self.feature_count, kernel_size, kernel_size))
+            self.biases = np.random.uniform(-np.sqrt(k), np.sqrt(k), size=out_channels)
         else:
             raise Exception("Initialization technique not recognized")
 
@@ -72,15 +68,12 @@ class Conv2d(Module):
         _input = Conv2d.pad(_input, self.padding, self.pad_mode) if self.padding > 0 else _input
 
         # im2col and strides vectorization techniques
-        if self.groups == 1:
-            self._inputWindows = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, :, ::self.stride, ::self.stride]
-            _windows = rearrange(self._inputWindows, 'n c_in h w kh kw -> n h w (c_in kh kw)')
-            _weights = rearrange(self.weights, 'c_out c_in kh kw -> c_out (c_in kh kw)')
-            _output = np.einsum('n h w q, c q -> n c h w', _windows, _weights) # q is the collapsed dimension
-            _biases = rearrange(self.biases, 'c_out -> 1 c_out 1 1')
-            return _output + _biases
-        else: # grouped convolutions
-            ...
+        self._inputWindows = sliding_window_view(_input, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, :, ::self.stride, ::self.stride]
+        _windows = rearrange(self._inputWindows, 'n c_in h w kh kw -> n h w (c_in kh kw)')
+        _weights = rearrange(self.weights, 'c_out c_in kh kw -> c_out (c_in kh kw)')
+        _output = np.einsum('n h w q, c q -> n c h w', _windows, _weights) # q is the collapsed dimension
+        _biases = rearrange(self.biases, 'c_out -> 1 c_out 1 1')
+        return _output + _biases
 
     def backward(self, _input, _gradPrev):
         # calculate parameter gradients
@@ -88,21 +81,37 @@ class Conv2d(Module):
         self.gradBiases += np.mean(_gradPrev.sum(axis=(-2, -1)), axis=0)
 
         # convolve the adjoint with a rotated kernel to produce _gradCurr
-        if self.groups == 1:
-            #breakpoint()
-            if self.padding == 0:
-                _padding = self.kernel_size - 1
-            else:
-                _padding = self.kernel_size - 2 * self.padding
-            #_padding = self.kernel_size - 1 if self.padding == 0 else self.padding*2 + 1
-            _gradPrev = Conv2d.pad(_gradPrev, _padding, "constant")
+        _gradCurr = np.zeros_like(_input)
+        #_x = 1
+        #for e in range(len(_input.shape)):
+        #    _x *= _input.shape[e]
+        #_gradCurr = np.arange(_x).reshape(_input.shape)
 
-            _gradPrevWindows = sliding_window_view(_gradPrev, window_shape=(self.kernel_size, self.kernel_size), axis=(-2, -1))[:, :, ::self.stride, ::self.stride]
-            _rotKernel = np.rot90(self.weights, 2, axes=(-2, -1))
-            _gradCurr = np.einsum('n o h w k l, o i k l -> n i h w', _gradPrevWindows, _rotKernel)
-            return _gradCurr
-        else: # grouped convolutions
-            ...
+        # how much to pad _gradCurr by? I believe self.kernel_size - 1 to account for "rotated filter"
+        _pad = (self.kernel_size - 1) // 2 # if self.padding > 0 else 0
+        _gradCurr = Conv2d.pad(_gradCurr, _pad, "constant")
+        _rotKernel = np.rot90(self.weights, 2, axes=(-2, -1))
+
+        # inds0 = (h_in, 1, k, 1); inds1 = (1, h_in, 1, k). h_in accounts for stride
+        inds0, inds1 = Conv2d.unroll_img_inds(range(0, _gradCurr.shape[-1] - self.kernel_size + 1, self.stride), self.kernel_size)
+        x1 = _gradCurr[:, :, inds0, inds1]
+
+        #indsx, indsy = np.ix_(range(_gradPrev.shape[-1]), range(_gradPrev.shape[-1]))
+        indsx, indsy = Conv2d.unroll_img_inds(range(0, _gradPrev.shape[-1], self.stride), 1)
+        x2 = _gradPrev[:, :, indsx, indsy]
+
+        breakpoint()
+        _gradCurr += np.einsum('n o c d p q, o i k l -> n i c d', x2, _rotKernel)
+        # now, all you have to do is multiply _gradPrev[:, :, indsx, indsy] by the weights matrix using np.einsum
+        # then add that to _gradCurr[:, :, inds0, inds1] and you should be done :)
+
+        #np.add.at(_gradCurr, )
+
+        if self.padding > 0: # remove padding to match _input shape
+            _gradCurr = _gradCurr[:, :, _pad:-_pad, _pad:-_pad]
+
+        assert _gradCurr.shape == _input.shape
+        return _gradCurr
 
         """
         for i in range(self.out_spatial_dim): # go down the height dimension
@@ -132,6 +141,18 @@ class Conv2d(Module):
     def pad(_input, padding, mode):
         pad_width = ((0, 0), (0, 0), (padding, padding), (padding, padding))
         return np.pad(_input, pad_width=pad_width, mode=mode)
+
+    @staticmethod # code taken from Haochen Wang - https://github.com/w-hc
+    def unroll_img_inds(base_hinds, filter_h, base_winds=None, filter_w=None):
+        # assume spatial dimensions are identical
+        filter_w = filter_h if filter_w is None else filter_w
+        base_winds = base_hinds if base_winds is None else base_winds
+
+        outer_h, outer_w, inner_h, inner_w = np.ix_(
+            base_hinds, base_winds, range(filter_h), range(filter_w)
+        )
+
+        return outer_h + inner_h, outer_w + inner_w
 
     def name(self):
         return "Conv2d Layer"

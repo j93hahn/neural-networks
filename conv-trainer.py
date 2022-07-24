@@ -1,18 +1,9 @@
+from data_loaders import mnist
+from tqdm import tqdm
 import numpy as np
 import modules as m
 import optim as o
-from data_loaders import mnist
-from tqdm import tqdm
 import torch
-
-
-"""
-For the MNIST dataset, image sizes go from 28x28 to 14x14 to 7x7 then to 1x1.
-- at each successive decrease in image size, we apply a pooling layer with stride 2
-- 1x1 convolutional filters are just linear layers
-
-- input_channel = 1, but we can double number of channels for each successive pooling layer
-"""
 
 
 def training(model, loss, optimizer, scheduler):
@@ -40,7 +31,6 @@ def training(model, loss, optimizer, scheduler):
             upper = batch_size + batch_size*t
 
             # now perform mini-batch gradient descent
-            breakpoint()
             curr_batch_data = _data[lower:upper, :].reshape(batch_size, 1, 28, 28)
             curr_batch_labels = _labels[lower:upper]
             prediction = model.forward(curr_batch_data / 255)
@@ -52,6 +42,8 @@ def training(model, loss, optimizer, scheduler):
             model.backward(prediction, loss.backward(actual))
             optimizer.step()
         scheduler.step()
+    torch.save(model, 'conv/model.pt')
+
 
 def inference(model):
     model.eval()
@@ -66,20 +58,27 @@ def inference(model):
 
 def main():
     model = m.Sequential(
-        m.Conv2d(in_channels=1, out_channels=8, kernel_size=3, padding=1),
+        m.Conv2d(in_channels=1, out_channels=8, kernel_size=3, padding=1, stride=1),
         m.ReLU(),
+        m.Conv2d(in_channels=8, out_channels=8, kernel_size=3, padding=1, stride=1),
+        m.ReLU(),
+        m.Pooling2d(kernel_size=2, stride=2, mode="max"),
+        m.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1, stride=1),
+        m.ReLU(),
+        m.Pooling2d(kernel_size=2, stride=2, mode="avg"),
         m.Flatten2d(),
-        m.Linear(in_features=6272, out_features=10)
+        m.Linear(in_features=784, out_features=10)
     )
 
     loss = m.SoftMaxLoss()
     optimizer = o.SGDM(model.params())
     scheduler = o.lr_scheduler(optimizer, step_size=15)
     training(model, loss, optimizer, scheduler)
-    print("Training completed")
+    print("Training completed, now beginning inference...")
 
-    breakpoint()
-    inference(model)
+    trained_model = torch.load('conv/model.pt')
+    inference(trained_model)
+
 
 if __name__ == '__main__':
     main()

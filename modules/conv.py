@@ -4,20 +4,6 @@ from .module import Module
 import numpy as np
 
 
-"""
-Materials/documentation used to understand convolutional neural networks
-1] Vectorization of Convolutions
-    - https://cs231n.github.io/convolutional-networks/#conv
-    - https://towardsdatascience.com/how-are-convolutions-actually-performed-under-the-hood-226523ce7fbf
-    - https://github.com/numpy/numpy/blob/main/numpy/lib/stride_tricks.py
-
-2] Mapping Input Channels to Output Channels
-    - https://iksinc.online/2020/05/10/groups-parameter-of-the-convolution-layer/
-
-3] Backpropagation
-    - https://pavisj.medium.com/convolutions-and-backpropagations-46026a8f5d2c
-    - https://github.com/SkalskiP/ILearnDeepLearning.py/blob/master/01_mysteries_of_neural_networks/06_numpy_convolutional_neural_net/src/layers/convolutional.py
-"""
 class Conv2d(Module):
     def __init__(self, in_channels, out_channels, kernel_size, groups=1,
                  stride=1, padding=0, pad_mode="zeros", init_method="Uniform") -> None:
@@ -81,58 +67,19 @@ class Conv2d(Module):
         self.gradBiases += np.mean(_gradPrev.sum(axis=(-2, -1)), axis=0)
 
         # convolve the adjoint with a rotated kernel to produce _gradCurr
-        _gradCurr = np.zeros_like(_input)
-        #_x = 1
-        #for e in range(len(_input.shape)):
-        #    _x *= _input.shape[e]
-        #_gradCurr = np.arange(_x).reshape(_input.shape)
-
-        # how much to pad _gradCurr by? I believe self.kernel_size - 1 to account for "rotated filter"
-        _pad = (self.kernel_size - 1) // 2 # if self.padding > 0 else 0
-        _gradCurr = Conv2d.pad(_gradCurr, _pad, "constant")
+        _pad = (self.kernel_size - 1) // 2
+        _gradCurr = Conv2d.pad(np.zeros_like(_input), _pad, "constant")
         _rotKernel = np.rot90(self.weights, 2, axes=(-2, -1))
 
-        # inds0 = (h_in, 1, k, 1); inds1 = (1, h_in, 1, k). h_in accounts for stride
+        # each element in _gradPrev corresponds to a square in _gradCurr with length self.kernel_size convolved with the filter
         inds0, inds1 = Conv2d.unroll_img_inds(range(0, _gradCurr.shape[-1] - self.kernel_size + 1, self.stride), self.kernel_size)
-        x1 = _gradCurr[:, :, inds0, inds1]
-
-        #indsx, indsy = np.ix_(range(_gradPrev.shape[-1]), range(_gradPrev.shape[-1]))
-        indsx, indsy = Conv2d.unroll_img_inds(range(0, _gradPrev.shape[-1], self.stride), 1)
-        x2 = _gradPrev[:, :, indsx, indsy]
-
-        breakpoint()
-        _gradCurr += np.einsum('n o c d p q, o i k l -> n i c d', x2, _rotKernel)
-        # now, all you have to do is multiply _gradPrev[:, :, indsx, indsy] by the weights matrix using np.einsum
-        # then add that to _gradCurr[:, :, inds0, inds1] and you should be done :)
-
-        #np.add.at(_gradCurr, )
+        inds2, inds3 = Conv2d.unroll_img_inds(range(0, _gradPrev.shape[-1], self.stride), 1)
+        _gradCurr[:, :, inds0, inds1] += np.einsum('n o c d p q, o i k l -> n i c d p q', _gradPrev[:, :, inds2, inds3], _rotKernel)
 
         if self.padding > 0: # remove padding to match _input shape
             _gradCurr = _gradCurr[:, :, _pad:-_pad, _pad:-_pad]
 
-        assert _gradCurr.shape == _input.shape
         return _gradCurr
-
-        """
-        for i in range(self.out_spatial_dim): # go down the height dimension
-            v_start = self.stride * i
-            v_end = v_start + self.kernel_size
-
-            for j in range(self.out_spatial_dim): # go across the width dimension
-                h_start = self.stride * j
-                h_end = h_start + self.kernel_size
-                # sum along out_channels dimension
-                _gradCurr[:, :, v_start:v_end, h_start:h_end] += np.sum(self.weights[np.newaxis, :, :, :, :] * _gradPrev[:, :, np.newaxis, i:i+1, j:j+1], axis=1)
-
-                # sum along batch dimension
-                self.gradWeights += np.sum(_input[:, np.newaxis, :, v_start:v_end, h_start:h_end] * _gradPrev[:, :, np.newaxis, i:i+1, j:j+1], axis=0)
-
-        # average parameter gradients across batch dimension
-        self.gradWeights /= _input.shape[0] # divide by batch amount
-
-        if self.padding > 0:
-            _gradCurr = _gradCurr[:, :, self.padding:-self.padding, self.padding:-self.padding]
-        """
 
     def params(self):
         return [self.weights, self.biases], [self.gradWeights, self.gradBiases]

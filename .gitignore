@@ -6,7 +6,7 @@
 # Personal Ignores
 hw5
 .DS_Store
-
+conv/data/*
 
 # User-specific files
 *.rsuser

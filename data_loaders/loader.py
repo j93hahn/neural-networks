@@ -1,6 +1,5 @@
 # sourced and modified from: https://github.com/hsjeong5/MNIST-for-Numpy
 import pickle
-import numpy as np
 
 
 class MNISTDataLoader():
@@ -23,16 +22,6 @@ class MNISTDataLoader():
         self.test_labels = mnist["test_labels"]
         self.name = "Fashion MNIST"
         return self
-
-
-class CifarDataLoader():
-    def __init__(self, file) -> None:
-        self.batch = pickle.load(open("data_loaders/" + file, 'rb'), \
-            encoding='bytes')
-        self.name = self.batch[b'batch_label']
-        self.labels = np.array(self.batch[b'labels'])
-        self.data = self.batch[b'data']
-        self.files = self.batch[b'filenames']
 
 
 mnist = MNISTDataLoader().mnist()

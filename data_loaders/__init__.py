@@ -1,5 +1,5 @@
-from .loader import mnist, fashion_mnist, CifarDataLoader
+from .loader import mnist, fashion_mnist
 
 __all__ = [
-    'mnist', 'fashion_mnist', 'CifarDataLoader'
+    'mnist', 'fashion_mnist'
 ]

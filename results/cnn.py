@@ -60,7 +60,6 @@ def training(model, criterion, optimizer, scheduler):
             inputs, _labels = data
             optimizer.zero_grad()
 
-            # inputs = inputs.reshape(batch_size, 784)
             labels = torch.zeros((batch_size, 10))
             labels[torch.arange(0, batch_size), _labels] = 1
 
@@ -79,7 +78,6 @@ def inference(model):
         for _, data in tqdm(enumerate(testloader, 0), total=len(testloader)):
             inputs, _labels = data
 
-            # inputs = inputs.reshape(test_size, 784)
             labels = torch.zeros((test_size, 10))
             labels[torch.arange(0, test_size), _labels] = 1
 

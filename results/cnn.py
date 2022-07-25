@@ -29,6 +29,8 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr
 
+from tqdm import tqdm
+
 
 def build_model():
     model = nn.Sequential(
@@ -54,7 +56,7 @@ def training(model, criterion, optimizer, scheduler):
     epochs = 15
     for e in range(epochs):
         print("-- Beginning Training Epoch " + str(e + 1) + " --")
-        for _, data in enumerate(trainloader, 0):
+        for _, data in tqdm(enumerate(trainloader, 0), total=len(trainloader)):
             inputs, _labels = data
             optimizer.zero_grad()
 
@@ -74,7 +76,7 @@ def inference(model):
     accuracy = 0
     total = 0
     with torch.no_grad():
-        for data in testloader:
+        for _, data in tqdm(enumerate(testloader, 0), total=len(testloader)):
             inputs, _labels = data
 
             # inputs = inputs.reshape(test_size, 784)

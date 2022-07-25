@@ -8,6 +8,7 @@ hw5
 .DS_Store
 conv/data/*
 conv/model.pt
+results/data/
 
 # User-specific files
 *.rsuser

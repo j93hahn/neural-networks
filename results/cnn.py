@@ -92,7 +92,7 @@ def inference(model):
 
 def main():
     model, criterion, optimizer, scheduler = build_model()
-    # training(model, criterion, optimizer, scheduler)
+    training(model, criterion, optimizer, scheduler)
     print("Training completed, now beginning inference...")
     inference(model)
 

@@ -32,16 +32,16 @@ import torch.optim.lr_scheduler as lr
 
 def build_model():
     model = nn.Sequential(
-        nn.Conv2d(1, 4, 3),
-        nn.BatchNorm2d(num_features=4),
+        nn.Linear(784, 100),
+        nn.BatchNorm1d(num_features=100),
         nn.ReLU(),
-        nn.MaxPool2d(2),
-        nn.Conv2d(4, 8, 3),
-        nn.BatchNorm2d(num_features=8),
+        nn.Linear(100, 64),
+        nn.BatchNorm1d(num_features=64),
         nn.ReLU(),
-        nn.MaxPool2d(2),
-        nn.Flatten(),
-        nn.Linear(200, 10)
+        nn.Linear(64, 16),
+        nn.BatchNorm1d(num_features=16),
+        nn.ReLU(),
+        nn.Linear(16, 10)
     )
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
@@ -58,7 +58,7 @@ def training(model, criterion, optimizer, scheduler):
             inputs, _labels = data
             optimizer.zero_grad()
 
-            # inputs = inputs.reshape(batch_size, 784)
+            inputs = inputs.reshape(batch_size, 784)
             labels = torch.zeros((batch_size, 10))
             labels[torch.arange(0, batch_size), _labels] = 1
 
@@ -77,7 +77,7 @@ def inference(model):
         for data in testloader:
             inputs, _labels = data
 
-            # inputs = inputs.reshape(test_size, 784)
+            inputs = inputs.reshape(test_size, 784)
             labels = torch.zeros((test_size, 10))
             labels[torch.arange(0, test_size), _labels] = 1
 
@@ -92,7 +92,7 @@ def inference(model):
 
 def main():
     model, criterion, optimizer, scheduler = build_model()
-    # training(model, criterion, optimizer, scheduler)
+    training(model, criterion, optimizer, scheduler)
     print("Training completed, now beginning inference...")
     inference(model)
 

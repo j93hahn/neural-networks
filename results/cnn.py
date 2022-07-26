@@ -12,7 +12,7 @@ transform = transforms.Compose(
 
 batch_size = 100
 test_size = 1
-epochs = 15
+epochs = 1
 
 
 trainset = FashionMNIST(root='./data', train=True, download=False, transform=transform)
@@ -114,29 +114,29 @@ def retrieve_numeric_values(model, mode):
         for name, layer in model.named_modules():
             if isinstance(layer, nn.Linear):
                 if name == '9':
-                    allGradients._lgw9.append(layer.weight.reshape(-1).detach().numpy())
-                    allGradients._lgb9.append(layer.bias.reshape(-1).detach().numpy())
+                    allGradients._lgw9.append(layer.weight.grad.reshape(-1).detach().numpy())
+                    allGradients._lgb9.append(layer.bias.grad.reshape(-1).detach().numpy())
                 elif name == '11':
-                    allGradients._lgw11.append(layer.weight.reshape(-1).detach().numpy())
-                    allGradients._lgb11.append(layer.bias.reshape(-1).detach().numpy())
+                    allGradients._lgw11.append(layer.weight.grad.reshape(-1).detach().numpy())
+                    allGradients._lgb11.append(layer.bias.grad.reshape(-1).detach().numpy())
                 else:
                     raise Exception("Invalid name type")
             elif isinstance(layer, nn.Conv2d):
                 if name == '0':
-                    allGradients._cgw0.append(layer.weight.reshape(-1).detach().numpy())
-                    allGradients._cgb0.append(layer.bias.reshape(-1).detach().numpy())
+                    allGradients._cgw0.append(layer.weight.grad.reshape(-1).detach().numpy())
+                    allGradients._cgb0.append(layer.bias.grad.reshape(-1).detach().numpy())
                 elif name == '4':
-                    allGradients._cgw4.append(layer.weight.reshape(-1).detach().numpy())
-                    allGradients._cgb4.append(layer.bias.reshape(-1).detach().numpy())
+                    allGradients._cgw4.append(layer.weight.grad.reshape(-1).detach().numpy())
+                    allGradients._cgb4.append(layer.bias.grad.reshape(-1).detach().numpy())
                 else:
                     raise Exception("Invalid name type")
             elif isinstance(layer, Norm):
                 if name == '1':
-                    allGradients._ngw1.append(layer.weight.reshape(-1).detach().numpy())
-                    allGradients._ngb1.append(layer.bias.reshape(-1).detach().numpy())
+                    allGradients._ngw1.append(layer.weight.grad.reshape(-1).detach().numpy())
+                    allGradients._ngb1.append(layer.bias.grad.reshape(-1).detach().numpy())
                 elif name == '5':
-                    allGradients._ngw5.append(layer.weight.reshape(-1).detach().numpy())
-                    allGradients._ngb5.append(layer.bias.reshape(-1).detach().numpy())
+                    allGradients._ngw5.append(layer.weight.grad.reshape(-1).detach().numpy())
+                    allGradients._ngb5.append(layer.bias.grad.reshape(-1).detach().numpy())
                 else:
                     raise Exception("Invalid name type")
     else:

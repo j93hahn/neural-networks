@@ -12,7 +12,7 @@ transform = transforms.Compose(
 
 batch_size = 100
 test_size = 1
-epochs = 1
+epochs = 15
 
 
 trainset = FashionMNIST(root='./data', train=True, download=False, transform=transform)
@@ -50,7 +50,9 @@ def build_model():
     )
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters())
-    return model, criterion, optimizer
+    param_dict = {k:[] for k,_ in model.named_parameters()}
+    grad_dict = {k:[] for k,_ in model.named_parameters()}
+    return model, criterion, optimizer, param_dict, grad_dict
 
 
 def init_params(layer):
@@ -60,112 +62,30 @@ def init_params(layer):
         nn.init.uniform_(layer.bias)
 
 
-# store parameters from model
-class Parameters():
-    def __init__(self) -> None:
-        self._lw9 = []; self._lb9 = []; self._lw11 = []; self._lb11 = []
-        self._cw0 = []; self._cb0 = []; self._cw4 = []; self._cb4 = []
-        self._nw1 = []; self._nb1 = []; self._nw5 = []; self._nb5 = []
+def process_dict(numeric_dict):
+    for k in numeric_dict.keys():
+        ele = torch.stack(numeric_dict[k]).detach().numpy()
+        numeric_dict[k] = ele.reshape(epochs, len(trainloader), -1)
 
 
-# store gradients from model
-class Gradients():
-    def __init__(self) -> None:
-        self._lgw9 = []; self._lgb9 = []; self._lgw11 = []; self._lgb11 = []
-        self._cgw0 = []; self._cgb0 = []; self._cgw4 = []; self._cgb4 = []
-        self._ngw1 = []; self._ngb1 = []; self._ngw5 = []; self._ngb5 = []
+def checkpoint(param_dict, grad_dict):
+    process_dict(param_dict)
+    process_dict(grad_dict)
+    torch.save(param_dict, 'experiments/weightinit/uniform/param.pt')
+    torch.save(grad_dict, 'experiments/weightinit/uniform/grad.pt')
 
 
-allParams = Parameters()
-allGradients = Gradients()
+def retrieve_numeric_values(model, mode, numeric_dict):
+    for k,v in model.named_parameters():
+        if mode == "params":
+            numeric_dict[k].append(v.reshape(-1))
+        elif mode == "gradients":
+            numeric_dict[k].append(v.grad.reshape(-1))
+        else:
+            raise Exception("Invalid mode specified")
 
 
-def retrieve_numeric_values(model, mode):
-    if mode == "params":
-        for name, layer in model.named_modules():
-            if isinstance(layer, nn.Linear):
-                if name == '9':
-                    allParams._lw9.append(layer.weight.reshape(-1).detach().numpy())
-                    allParams._lb9.append(layer.bias.reshape(-1).detach().numpy())
-                elif name == '11':
-                    allParams._lw11.append(layer.weight.reshape(-1).detach().numpy())
-                    allParams._lb11.append(layer.bias.reshape(-1).detach().numpy())
-                else:
-                    raise Exception("Invalid name type")
-            elif isinstance(layer, nn.Conv2d):
-                if name == '0':
-                    allParams._cw0.append(layer.weight.reshape(-1).detach().numpy())
-                    allParams._cb0.append(layer.bias.reshape(-1).detach().numpy())
-                elif name == '4':
-                    allParams._cw4.append(layer.weight.reshape(-1).detach().numpy())
-                    allParams._cb4.append(layer.bias.reshape(-1).detach().numpy())
-                else:
-                    raise Exception("Invalid name type")
-            elif isinstance(layer, Norm):
-                if name == '1':
-                    allParams._nw1.append(layer.weight.reshape(-1).detach().numpy())
-                    allParams._nb1.append(layer.bias.reshape(-1).detach().numpy())
-                elif name == '5':
-                    allParams._nw5.append(layer.weight.reshape(-1).detach().numpy())
-                    allParams._nb5.append(layer.bias.reshape(-1).detach().numpy())
-                else:
-                    raise Exception("Invalid name type")
-    elif mode == "gradients":
-        for name, layer in model.named_modules():
-            if isinstance(layer, nn.Linear):
-                if name == '9':
-                    allGradients._lgw9.append(layer.weight.grad.reshape(-1).detach().numpy())
-                    allGradients._lgb9.append(layer.bias.grad.reshape(-1).detach().numpy())
-                elif name == '11':
-                    allGradients._lgw11.append(layer.weight.grad.reshape(-1).detach().numpy())
-                    allGradients._lgb11.append(layer.bias.grad.reshape(-1).detach().numpy())
-                else:
-                    raise Exception("Invalid name type")
-            elif isinstance(layer, nn.Conv2d):
-                if name == '0':
-                    allGradients._cgw0.append(layer.weight.grad.reshape(-1).detach().numpy())
-                    allGradients._cgb0.append(layer.bias.grad.reshape(-1).detach().numpy())
-                elif name == '4':
-                    allGradients._cgw4.append(layer.weight.grad.reshape(-1).detach().numpy())
-                    allGradients._cgb4.append(layer.bias.grad.reshape(-1).detach().numpy())
-                else:
-                    raise Exception("Invalid name type")
-            elif isinstance(layer, Norm):
-                if name == '1':
-                    allGradients._ngw1.append(layer.weight.grad.reshape(-1).detach().numpy())
-                    allGradients._ngb1.append(layer.bias.grad.reshape(-1).detach().numpy())
-                elif name == '5':
-                    allGradients._ngw5.append(layer.weight.grad.reshape(-1).detach().numpy())
-                    allGradients._ngb5.append(layer.bias.grad.reshape(-1).detach().numpy())
-                else:
-                    raise Exception("Invalid name type")
-    else:
-        raise Exception("Invalid mode inserted")
-
-
-def process_numeric_values(losses):
-    # process loss values
-    losses = torch.stack(losses).detach().numpy()
-
-    # process parameters
-    for attr in filter(lambda a: not a.startswith('__'), dir(allParams)):
-        setattr(allParams, attr, np.array(getattr(allParams, attr)).reshape(epochs, len(trainloader), -1))
-
-    # process gradients
-    for attr in filter(lambda a: not a.startswith('__'), dir(allGradients)):
-        setattr(allGradients, attr, np.array(getattr(allGradients, attr)).reshape(epochs, len(trainloader), -1))
-
-    np.savez('experiments/weightinit/uniform.npz', losses,
-        allParams._lw9, allParams._lb9, allParams._lw11, allParams._lb11,
-        allParams._cw0, allParams._cb0, allParams._cw4, allParams._cb4,
-        allParams._nw1, allParams._nb1, allParams._nw5, allParams._nb5,
-        allGradients._lgw9, allGradients._lgb9, allGradients._lgw11, allGradients._lgb11,
-        allGradients._cgw0, allGradients._cgb0, allGradients._cgw4, allGradients._cgb4,
-        allGradients._ngw1, allGradients._ngb1, allGradients._ngw5, allGradients._ngb5,
-    )
-
-
-def training(model, criterion, optimizer):
+def training(model, criterion, optimizer, param_dict, grad_dict):
     model.train()
     losses = []
     for e in range(epochs):
@@ -173,7 +93,7 @@ def training(model, criterion, optimizer):
         epoch_losses = []
         for _, data in tqdm(enumerate(trainloader, 0), total=len(trainloader)):
             # collect parameter values before optimizer.step()
-            retrieve_numeric_values(model, "params")
+            retrieve_numeric_values(model, "params", param_dict)
 
             # execute mini-batch
             inputs, _labels = data
@@ -192,13 +112,12 @@ def training(model, criterion, optimizer):
             epoch_losses.append(loss)
 
             # collect gradient values after computing the loss
-            retrieve_numeric_values(model, "gradients")
+            retrieve_numeric_values(model, "gradients", grad_dict)
 
         losses.append(torch.stack(epoch_losses))
 
     print("Training completed, now processing numeric values for visualizations...")
-    process_numeric_values(losses)
-    print("Numeric processing completed, now beginning inference...")
+    np.save('experiments/weightinit/uniform/loss.npy', torch.stack(losses).detach().numpy())
 
 
 def inference(model):
@@ -222,11 +141,13 @@ def inference(model):
 
 
 def main():
-    model, criterion, optimizer = build_model()
+    model, criterion, optimizer, param_dict, grad_dict = build_model()
     summary(model, (1, 28, 28), device="cpu")
     model.apply(init_params)
 
-    training(model, criterion, optimizer)
+    training(model, criterion, optimizer, param_dict, grad_dict)
+    checkpoint(grad_dict, param_dict)
+    print("Numeric processing completed, now beginning inference...")
     inference(model)
 
 

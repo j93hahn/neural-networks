@@ -223,7 +223,7 @@ def inference(model):
 
 def main():
     model, criterion, optimizer = build_model()
-    #summary(model, (1, 28, 28), device="cpu")
+    summary(model, (1, 28, 28), device="cpu")
     model.apply(init_params)
 
     training(model, criterion, optimizer)

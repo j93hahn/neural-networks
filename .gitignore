@@ -9,6 +9,7 @@ hw5
 conv/data/*
 conv/model.pt
 results/data/
+*.npz
 
 # User-specific files
 *.rsuser

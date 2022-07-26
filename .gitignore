@@ -10,6 +10,8 @@ conv/data/*
 conv/model.pt
 results/data/
 *.npz
+*.npy
+*.pt
 
 # User-specific files
 *.rsuser

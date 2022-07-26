@@ -1,7 +1,7 @@
 # process training and testing data here
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-from torchvision.datasets import MNIST, FashionMNIST
+from torchvision.datasets import FashionMNIST
 from torchsummary import summary
 
 
@@ -12,7 +12,8 @@ transform = transforms.Compose(
 
 batch_size = 100
 test_size = 1
-epochs = 15
+epochs = 12
+count = 50 # how often we should save information to disk
 
 
 trainset = FashionMNIST(root='./data', train=True, download=False, transform=transform)
@@ -58,21 +59,21 @@ def build_model():
 def init_params(layer):
     # https://pytorch.org/docs/stable/nn.init.html
     if type(layer) == nn.Linear or type(layer) == nn.Conv2d or type(layer) == Norm:
-        nn.init.uniform_(layer.weight)
-        nn.init.uniform_(layer.bias)
+        nn.init.zeros_(layer.weight)
+        nn.init.zeros_(layer.bias)
 
 
 def process_dict(numeric_dict):
     for k in numeric_dict.keys():
         ele = torch.stack(numeric_dict[k]).detach().numpy()
-        numeric_dict[k] = ele.reshape(epochs, len(trainloader), -1)
+        numeric_dict[k] = ele.reshape(epochs, int(len(trainloader) / count), -1)
 
 
 def checkpoint(param_dict, grad_dict):
     process_dict(param_dict)
     process_dict(grad_dict)
-    torch.save(param_dict, 'experiments/weightinit/uniform/param.pt')
-    torch.save(grad_dict, 'experiments/weightinit/uniform/grad.pt')
+    torch.save(param_dict, 'experiments/weightinit/zeros/param.pt')
+    torch.save(grad_dict, 'experiments/weightinit/zeros/grad.pt')
 
 
 def retrieve_numeric_values(model, mode, numeric_dict):
@@ -91,9 +92,10 @@ def training(model, criterion, optimizer, param_dict, grad_dict):
     for e in range(epochs):
         print("-- Beginning Training Epoch " + str(e + 1) + " --")
         epoch_losses = []
-        for _, data in tqdm(enumerate(trainloader, 0), total=len(trainloader)):
+        for step, data in tqdm(enumerate(trainloader, 0), total=len(trainloader)):
             # collect parameter values before optimizer.step()
-            retrieve_numeric_values(model, "params", param_dict)
+            if step % count == 0:
+                retrieve_numeric_values(model, "params", param_dict)
 
             # execute mini-batch
             inputs, _labels = data
@@ -112,12 +114,13 @@ def training(model, criterion, optimizer, param_dict, grad_dict):
             epoch_losses.append(loss)
 
             # collect gradient values after computing the loss
-            retrieve_numeric_values(model, "gradients", grad_dict)
+            if step % count == 0:
+                retrieve_numeric_values(model, "gradients", grad_dict)
 
         losses.append(torch.stack(epoch_losses))
 
     print("Training completed, now processing numeric values for visualizations...")
-    np.save('experiments/weightinit/uniform/loss.npy', torch.stack(losses).detach().numpy())
+    np.save('experiments/weightinit/zeros/loss.npy', torch.stack(losses).detach().numpy())
 
 
 def inference(model):

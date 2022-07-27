@@ -1,0 +1,40 @@
+LeNet Architecture
+
+------------------------------------------------------------------------------------
+            BatchNorm            LayerNorm            GroupNorm         Output Shape
+====================================================================================
+             Conv2d-1             Conv2d-1             Conv2d-1      [-1, 6, 28, 28]
+        BatchNorm2d-2          LayerNorm-2          GroupNorm-2      [-1, 6, 28, 28]
+               ReLU-3               ReLU-3               ReLU-3      [-1, 6, 28, 28]
+          MaxPool2d-4          MaxPool2d-4          MaxPool2d-4      [-1, 6, 14, 14]
+             Conv2d-5             Conv2d-5             Conv2d-5     [-1, 16, 14, 14]
+        BatchNorm2d-6          LayerNorm-6          GroupNorm-6     [-1, 16, 14, 14]
+               ReLU-7               ReLU-7               ReLU-7     [-1, 16, 14, 14]
+          MaxPool2d-8          MaxPool2d-8          MaxPool2d-8       [-1, 16, 7, 7]
+            Flatten-9            Flatten-9            Flatten-9            [-1, 784]
+            Linear-10            Linear-10            Linear-10             [-1, 84]
+              ReLU-11              ReLU-11              ReLU-11             [-1, 84]
+            Linear-12            Linear-12            Linear-12             [-1, 10]
+====================================================================================
+
+
+VGG Architecture
+
+------------------------------------------------------------------------------------
+            BatchNorm            LayerNorm            GroupNorm         Output Shape
+====================================================================================
+             Conv2d-1             Conv2d-1             Conv2d-1      [-1, 8, 28, 28]
+        BatchNorm2d-2          LayerNorm-2          GroupNorm-2      [-1, 8, 28, 28]
+               ReLU-3               ReLU-3               ReLU-3      [-1, 8, 28, 28]
+          MaxPool2d-4          MaxPool2d-4          MaxPool2d-4      [-1, 8, 14, 14]
+             Conv2d-5             Conv2d-5             Conv2d-5     [-1, 24, 14, 14]
+        BatchNorm2d-6          LayerNorm-6          GroupNorm-6     [-1, 24, 14, 14]
+               ReLU-7               ReLU-7               ReLU-7     [-1, 24, 14, 14]
+          MaxPool2d-8          MaxPool2d-8          MaxPool2d-8       [-1, 24, 7, 7]
+             Conv2d-9             Conv2d-9             Conv2d-9       [-1, 72, 7, 7]
+       BatchNorm2d-10         LayerNorm-10         GroupNorm-10       [-1, 72, 7, 7]
+              ReLU-11              ReLU-11              ReLU-11       [-1, 72, 7, 7]
+         MaxPool2d-12         MaxPool2d-12         MaxPool2d-12       [-1, 72, 1, 1]
+           Flatten-13           Flatten-13           Flatten-13             [-1, 72]
+            Linear-14            Linear-14            Linear-14             [-1, 10]
+====================================================================================

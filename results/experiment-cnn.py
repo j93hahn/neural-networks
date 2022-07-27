@@ -59,8 +59,8 @@ def build_model():
 def init_params(layer):
     # https://pytorch.org/docs/stable/nn.init.html
     if type(layer) == nn.Linear or type(layer) == nn.Conv2d or type(layer) == Norm:
-        nn.init.zeros_(layer.weight)
-        nn.init.zeros_(layer.bias)
+        nn.init.uniform_(layer.weight)
+        nn.init.uniform_(layer.bias)
 
 
 def process_dict(numeric_dict):
@@ -72,8 +72,8 @@ def process_dict(numeric_dict):
 def checkpoint(param_dict, grad_dict):
     process_dict(param_dict)
     process_dict(grad_dict)
-    torch.save(param_dict, 'experiments/weightinit/zeros/param.pt')
-    torch.save(grad_dict, 'experiments/weightinit/zeros/grad.pt')
+    torch.save(param_dict, 'experiments/weightinit/uniform/param.pt')
+    torch.save(grad_dict, 'experiments/weightinit/uniform/grad.pt')
 
 
 def retrieve_numeric_values(model, mode, numeric_dict):
@@ -120,7 +120,7 @@ def training(model, criterion, optimizer, param_dict, grad_dict):
         losses.append(torch.stack(epoch_losses))
 
     print("Training completed, now processing numeric values for visualizations...")
-    np.save('experiments/weightinit/zeros/loss.npy', torch.stack(losses).detach().numpy())
+    np.save('experiments/weightinit/uniform/loss.npy', torch.stack(losses).detach().numpy())
 
 
 def inference(model):

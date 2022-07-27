@@ -12,6 +12,7 @@ results/data/
 *.npz
 *.npy
 *.pt
+.ipynb_checkpoints
 
 # User-specific files
 *.rsuser

@@ -27,14 +27,14 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from torchsummary import summary_string
+from summary import summary, summary_string
 
 # specify normalization technique here
 from torch.nn import BatchNorm2d as Norm
 from tqdm import tqdm
 
 
-def build_model():
+def LeNet():
     model = nn.Sequential(
         nn.Conv2d(1, 6, 3, stride=1, padding=1),
         Norm(6),
@@ -48,6 +48,30 @@ def build_model():
         nn.Linear(784, 84),
         nn.ReLU(),
         nn.Linear(84, 10)
+    )
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters())
+    param_dict = {k:[] for k,_ in model.named_parameters()}
+    grad_dict = {k:[] for k,_ in model.named_parameters()}
+    return model, criterion, optimizer, param_dict, grad_dict
+
+
+def VGG():
+    model = nn.Sequential(
+        nn.Conv2d(1, 8, 3, stride=1, padding=1),
+        Norm(8),
+        nn.ReLU(),
+        nn.MaxPool2d(kernel_size=2, stride=2),
+        nn.Conv2d(8, 24, 3, stride=1, padding=1),
+        Norm(24),
+        nn.ReLU(),
+        nn.MaxPool2d(kernel_size=2, stride=2),
+        nn.Conv2d(24, 72, 3, stride=1, padding=1),
+        Norm(72),
+        nn.ReLU(),
+        nn.MaxPool2d(kernel_size=7, stride=7),
+        nn.Flatten(),
+        nn.Linear(72, 10)
     )
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters())
@@ -128,7 +152,7 @@ def training(model, criterion, optimizer, param_dict, grad_dict):
         losses.append(torch.stack(epoch_losses))
 
     print("Training completed, now processing numeric values for visualizations...")
-    np.save('experiments/weightinit/normal/loss.npy', torch.stack(losses).detach().numpy())
+    # np.save('experiments/weightinit/normal/loss.npy', torch.stack(losses).detach().numpy())
 
 
 def inference(model):
@@ -152,12 +176,13 @@ def inference(model):
 
 
 def main():
-    model, criterion, optimizer, param_dict, grad_dict = build_model()
-    io_summary(model)
+    model, criterion, optimizer, param_dict, grad_dict = VGG()
+    # io_summary(model)
+    summary(model, (1, 28, 28), device="cpu")
     model.apply(init_params)
 
     training(model, criterion, optimizer, param_dict, grad_dict)
-    checkpoint(grad_dict, param_dict)
+    # checkpoint(grad_dict, param_dict)
     print("Numeric processing completed, now beginning inference...")
     inference(model)
 

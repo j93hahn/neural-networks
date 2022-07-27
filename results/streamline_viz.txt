@@ -2,3 +2,7 @@
 2. Run "ssh -L 8080:localhost:8080 jjahn@archimedes.ttic.edu" on local machine
 3. Go to http://localhost:8080/ on local machine website
 4. Activate spacestation kernel for full conda availability
+
+To transfer files from SSH to local machine, on local machine run -
+1. scp jjahn@archimedes.ttic.edu:/share/data/pals/jjahn/neural-networks/results/* place/to/put/
+2. rsync -chavzP --stats jjahn@archimedes.ttic.edu:/share/data/pals/jjahn/neural-networks/results/* place/to/put/

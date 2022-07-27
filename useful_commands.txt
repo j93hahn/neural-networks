@@ -1,3 +1,4 @@
+To activate Jupyter notebooks on remote server -
 1. Run "jupyter notebook --no-browser --port=8080" from base conda env on archimedes
 2. Run "ssh -L 8080:localhost:8080 jjahn@archimedes.ttic.edu" on local machine
 3. Go to http://localhost:8080/ on local machine website

@@ -2,7 +2,6 @@
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torchvision.datasets import FashionMNIST
-from torchsummary import summary
 
 
 transform = transforms.Compose(
@@ -28,6 +27,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
+from torchsummary import summary_string
 
 # specify normalization technique here
 from torch.nn import BatchNorm2d as Norm
@@ -59,8 +59,8 @@ def build_model():
 def init_params(layer):
     # https://pytorch.org/docs/stable/nn.init.html
     if type(layer) == nn.Linear or type(layer) == nn.Conv2d or type(layer) == Norm:
-        nn.init.uniform_(layer.weight)
-        nn.init.uniform_(layer.bias)
+        nn.init.normal_(layer.weight)
+        nn.init.normal_(layer.bias)
 
 
 def process_dict(numeric_dict):
@@ -72,8 +72,8 @@ def process_dict(numeric_dict):
 def checkpoint(param_dict, grad_dict):
     process_dict(param_dict)
     process_dict(grad_dict)
-    torch.save(param_dict, 'experiments/weightinit/uniform/param.pt')
-    torch.save(grad_dict, 'experiments/weightinit/uniform/grad.pt')
+    torch.save(param_dict, 'experiments/weightinit/normal/param.pt')
+    torch.save(grad_dict, 'experiments/weightinit/normal/grad.pt')
 
 
 def retrieve_numeric_values(model, mode, numeric_dict):
@@ -84,6 +84,14 @@ def retrieve_numeric_values(model, mode, numeric_dict):
             numeric_dict[k].append(v.grad.reshape(-1))
         else:
             raise Exception("Invalid mode specified")
+
+
+def io_summary(model):
+    with open('experiments/weightinit/normal/summary.txt', 'w') as f:
+        result, _ = summary_string(model, (1, 28, 28), device="cpu")
+        f.write(result)
+    f.close()
+    print("Torchsummary successfully exported")
 
 
 def training(model, criterion, optimizer, param_dict, grad_dict):
@@ -120,7 +128,7 @@ def training(model, criterion, optimizer, param_dict, grad_dict):
         losses.append(torch.stack(epoch_losses))
 
     print("Training completed, now processing numeric values for visualizations...")
-    np.save('experiments/weightinit/uniform/loss.npy', torch.stack(losses).detach().numpy())
+    np.save('experiments/weightinit/normal/loss.npy', torch.stack(losses).detach().numpy())
 
 
 def inference(model):
@@ -145,7 +153,7 @@ def inference(model):
 
 def main():
     model, criterion, optimizer, param_dict, grad_dict = build_model()
-    summary(model, (1, 28, 28), device="cpu")
+    io_summary(model)
     model.apply(init_params)
 
     training(model, criterion, optimizer, param_dict, grad_dict)

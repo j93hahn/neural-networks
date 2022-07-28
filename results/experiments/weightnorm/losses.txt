@@ -1,0 +1,68 @@
+1. LeNet-6; VGG-14
+2. BatchNorm, LayerNorm, GroupNorm (groups=2 for all layers, including Conv layers); NN = no normalization
+3. Initialization Techniques
+4. Batch size=100
+
+Ones
+LeNet NN: 0.5997
+VGG NN: 0.8993
+
+Random Uniform
+LeNet BN: 0.1883
+LeNet LN: 0.2212
+LeNet GN: 0.2171
+LeNet NN: 0.2382
+VGG BN: 0.1345
+VGG LN: 0.1683
+VGG GN: 0.1476
+VGG NN: 0.6697
+
+Random Normal
+LeNet BN: 0.1925
+LeNet LN: 0.1761
+LeNet GN: 0.2211
+LeNet NN: 0.4275
+VGG BN: 0.1442
+VGG LN: 0.1418
+VGG GN: 0.1550
+VGG NN: 0.2220
+
+Xavier Uniform
+LeNet BN: 0.1061
+LeNet LN: 0.1084
+LeNet GN: 0.0955
+LeNet NN: 0.0938
+VGG BN: 0.1034
+VGG LN: 0.1027
+VGG GN: 0.1061
+VGG NN: 0.1050
+
+Xavier Normal
+LeNet BN: 0.1007
+LeNet LN: 0.1228
+LeNet GN: 0.0980
+LeNet NN: 0.1002
+VGG BN: 0.1031
+VGG LN: 0.1244
+VGG GN: 0.1095
+VGG NN: 0.1192
+
+Kaiming Uniform - mode='fan_in'
+LeNet BN: 0.1029
+LeNet LN: 0.1089
+LeNet GN: 0.1026
+LeNet NN: 0.0973
+VGG BN: 0.1337
+VGG LN: 0.1060
+VGG GN: 0.1102
+VGG NN: 0.1053
+
+Kaiming Uniform - mode='fan_out'
+LeNet BN: 0.1367
+LeNet LN: 0.1177
+LeNet GN: 0.1078
+LeNet NN: 0.1074
+VGG BN: 0.1043
+VGG LN: 0.1055
+VGG GN: 0.1163
+VGG NN: 0.1040

@@ -83,8 +83,8 @@ def VGG():
 def init_params(layer):
     # https://pytorch.org/docs/stable/nn.init.html
     if type(layer) == nn.Linear or type(layer) == nn.Conv2d or type(layer) == Norm:
-        nn.init.normal_(layer.weight)
-        nn.init.normal_(layer.bias)
+        nn.init.zeros_(layer.weight)
+        nn.init.zeros_(layer.bias)
 
 
 def process_dict(numeric_dict):
@@ -96,8 +96,8 @@ def process_dict(numeric_dict):
 def checkpoint(param_dict, grad_dict):
     process_dict(param_dict)
     process_dict(grad_dict)
-    torch.save(param_dict, 'experiments/weightinit/normal/param.pt')
-    torch.save(grad_dict, 'experiments/weightinit/normal/grad.pt')
+    torch.save(param_dict, 'experiments/weightinit/vgg-zeros/param.pt')
+    torch.save(grad_dict, 'experiments/weightinit/vgg-zeros/grad.pt')
 
 
 def retrieve_numeric_values(model, mode, numeric_dict):
@@ -111,7 +111,7 @@ def retrieve_numeric_values(model, mode, numeric_dict):
 
 
 def io_summary(model):
-    with open('experiments/weightinit/normal/summary.txt', 'w') as f:
+    with open('experiments/weightinit/vgg-zeros/summary.txt', 'w') as f:
         result, _ = summary_string(model, (1, 28, 28), device="cpu")
         f.write(result)
     f.close()
@@ -152,7 +152,7 @@ def training(model, criterion, optimizer, param_dict, grad_dict):
         losses.append(torch.stack(epoch_losses))
 
     print("Training completed, now processing numeric values for visualizations...")
-    # np.save('experiments/weightinit/normal/loss.npy', torch.stack(losses).detach().numpy())
+    np.save('experiments/weightinit/vgg-zeros/loss.npy', torch.stack(losses).detach().numpy())
 
 
 def inference(model):
@@ -177,12 +177,12 @@ def inference(model):
 
 def main():
     model, criterion, optimizer, param_dict, grad_dict = VGG()
-    # io_summary(model)
+    io_summary(model)
     summary(model, (1, 28, 28), device="cpu")
     model.apply(init_params)
 
     training(model, criterion, optimizer, param_dict, grad_dict)
-    # checkpoint(grad_dict, param_dict)
+    checkpoint(grad_dict, param_dict)
     print("Numeric processing completed, now beginning inference...")
     inference(model)
 

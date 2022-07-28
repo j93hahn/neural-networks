@@ -1,0 +1,13 @@
+1. For models trained using xavier_uniform_, xavier_normal_, kaiming_uniform_,
+    or kaiming_normal_, only the convolutional and linear layer weights were
+    initialized in this manner. All other parameters were initialized with
+    either a uniform or a normal distribution (depending on whether the xavier
+    or kaiming distribution was uniform/normal).
+
+Example --
+def init_params(layer):
+    nn.init.uniform_(layer.bias)
+    if type(layer) == nn.Linear or type(layer) == nn.Conv2d:
+        nn.init.xavier_uniform_(layer.weight)
+    elif type(layer) == Norm:
+        nn.init.uniform_(layer.weight)

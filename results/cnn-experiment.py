@@ -16,9 +16,7 @@ def parse_args():
     parser.add_argument(
         '-i',
         required=True,
-        choices=[
-            'zeros', 'ones', 'normal', 'uniform', 'xavier_normal',
-            'xavier_uniform', 'kaiming_uniform'],
+        choices=['z', 'o', 'n', 'u', 'xn', 'xu', 'ku'],
         help='Initialization technique')
     parser.add_argument(
         '-n',
@@ -46,17 +44,36 @@ def parse_args():
     category = 'weightinit' if args['c'] == 'i' else 'weightnorm'
     base_location = -1
 
-    if args['i'] != 'kaiming_uniform' and args['f'] != None:
+    if args['i'] != 'ku' and args['f'] != None:
         raise Exception(
             "Fan in or fan out only allowed with Kaiming Uniform initialization")
-    if args['i'] == 'kaiming_uniform' and args['f'] == None:
+    if args['i'] == 'ku' and args['f'] == None:
         raise Exception(
             "Kaiming Uniform initalization requires specification of fan in or fan out")
     if args['numeric'] or args['summary']:
+        method = ''
+        if args['i'] == 'z':
+            method = 'zeros'
+        elif args['i'] == 'o':
+            method = 'ones'
+        elif args['i'] == 'n':
+            method = 'normal'
+        elif args['i'] == 'u':
+            method = 'uniform'
+        elif args['i'] == 'xn':
+            method = 'xaviernorm'
+        elif args['i'] == 'xu':
+            method = 'xavieruniform'
+        elif args['i'] == 'ku':
+            method = 'kaiminguniform'
+
         import os
         base_location = 'experiments/' + category + '/' + args['m'] + '-' + \
-            args['i'] + '-' + args['n'] + '/'
-        os.mkdir(base_location)
+            method + '-' + args['n'] + '/'
+        try:
+            os.mkdir(base_location)
+        except FileNotFoundError:
+            os.makedirs(base_location)
     if args['print']:
         print("Category: " + category)
         print("Model: " + args['m'])
@@ -80,7 +97,7 @@ transform = transforms.Compose(
 args, base_location = parse_args()
 batch_size = 100
 test_size = 1
-epochs = 2
+epochs = 12
 count = 50 # how often we should save information to disk
 groups = 1 if args['n'] != 'gn' else 2
 
@@ -193,42 +210,40 @@ def init_params(layer):
     conv_layers = [nn.Linear, nn.Conv2d]
     all_layers = [nn.Linear, nn.Conv2d, nn.BatchNorm2d, nn.LayerNorm, nn.GroupNorm]
 
-    if args['i'] == 'zeros' and type(layer) in all_layers:
+    if args['i'] == 'z' and type(layer) in all_layers:
         nn.init.zeros_(layer.weight)
         nn.init.zeros_(layer.bias)
-    elif args['i'] == 'ones' and type(layer) in all_layers:
+    elif args['i'] == 'o' and type(layer) in all_layers:
         nn.init.ones_(layer.weight)
         nn.init.ones_(layer.bias)
-    elif args['i'] == 'normal' and type(layer) in all_layers:
+    elif args['i'] == 'n' and type(layer) in all_layers:
         nn.init.normal_(layer.weight)
         nn.init.normal_(layer.bias)
-    elif args['i'] == 'uniform' and type(layer) in all_layers:
+    elif args['i'] == 'u' and type(layer) in all_layers:
         nn.init.uniform_(layer.weight)
         nn.init.uniform_(layer.bias)
-    elif args['i'] == 'xavier_normal':
+    elif args['i'] == 'xn':
         if type(layer) in conv_layers:
             nn.init.xavier_normal_(layer.weight, mode='fan_in', nonlinearity='relu')
             nn.init.normal_(layer.bias)
         elif type(layer) in norm_layers:
             nn.init.normal_(layer.weight)
             nn.init.normal_(layer.bias)
-    elif args['i'] == 'xavier_uniform':
+    elif args['i'] == 'xu':
         if type(layer) in conv_layers:
             nn.init.xavier_uniform_(layer.weight, mode='fan_in', nonlinearity='relu')
             nn.init.uniform_(layer.bias)
         elif type(layer) in norm_layers:
             nn.init.uniform_(layer.weight)
             nn.init.uniform_(layer.bias)
-    elif args['i'] == 'kaiming_uniform':
-        mode = 'fan_in' if args['f'] == 'i' else 'fan_out'
+    elif args['i'] == 'ku':
+        mode = 'fan_in' if args['f'] == 'in' else 'fan_out'
         if type(layer) in conv_layers:
             nn.init.kaiming_uniform_(layer.weight, mode=mode, nonlinearity='relu')
             nn.init.uniform_(layer.bias)
         elif type(layer) in norm_layers:
             nn.init.uniform_(layer.weight)
             nn.init.uniform_(layer.bias)
-    else:
-        raise Exception("Invalid initialization technique")
 
 
 def process_dict(numeric_dict):
@@ -326,6 +341,8 @@ def inference(model):
             f.write("Inference completed, loss rate: {}".format(loss))
         f.close()
         print("Loss successfully exported to file")
+    if args['print']:
+        print("Inference completed, loss rate: {}".format(loss))
 
 
 def main():

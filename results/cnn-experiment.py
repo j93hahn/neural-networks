@@ -1,4 +1,4 @@
-# parse arguments here first
+# parse arguments first
 import argparse
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -44,6 +44,7 @@ def parse_args():
 
     args = vars(parser.parse_args())
     category = 'weightinit' if args['c'] == 'i' else 'weightnorm'
+    base_location = -1
 
     if args['i'] != 'kaiming_uniform' and args['f'] != None:
         raise Exception(
@@ -51,18 +52,18 @@ def parse_args():
     if args['i'] == 'kaiming_uniform' and args['f'] == None:
         raise Exception(
             "Kaiming Uniform initalization requires specification of fan in or fan out")
+    if args['numeric'] or args['summary']:
+        import os
+        base_location = 'experiments/' + category + '/' + args['m'] + '-' + \
+            args['i'] + '-' + args['n'] + '/'
+        os.mkdir(base_location)
     if args['print']:
         print("Category: " + category)
         print("Model: " + args['m'])
         print("Init: " + args['i'])
         print("Norm: " + args['n'])
 
-    return args, category
-
-
-args, category = parse_args()
-base_location = 'experiments/' + category + '/' + args['m'] + '-' + \
-    args['i'] + '-' + args['n'] + '/'
+    return args, base_location
 
 
 # process training and testing data here
@@ -76,6 +77,7 @@ transform = transforms.Compose(
      transforms.Normalize((0.1307,), (0.3081,))])
 
 
+args, base_location = parse_args()
 batch_size = 100
 test_size = 1
 epochs = 2

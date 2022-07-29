@@ -4,27 +4,35 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='Train, evaluate, and store data from convolutional models')
     parser.add_argument(
-        '--model',
-        choices=['LeNet', 'VGG'],
+        '-m',
+        required=True,
+        choices=['lenet', 'vgg'],
         help='Model category')
     parser.add_argument(
-        '--init',
+        '-c',
+        required=True,
+        choices=['i', 'n'],
+        help='Category this experiment is classified under')
+    parser.add_argument(
+        '-i',
+        required=True,
         choices=[
-            'zeros', 'ones', 'random', 'uniform', 'xavier_random',
+            'zeros', 'ones', 'normal', 'uniform', 'xavier_normal',
             'xavier_uniform', 'kaiming_uniform'],
         help='Initialization technique')
     parser.add_argument(
-        '--norm',
+        '-n',
+        required=True,
         choices=['nn', 'bn', 'ln', 'gn'],
         help='Normalization technique')
     parser.add_argument(
-        '--fan',
+        '-f',
         choices=['in', 'out'],
         help='Fan in or fan out, only for kaiming uniform initialization')
     parser.add_argument(
         '--numeric',
         action='store_true',
-        help='Store parameters and gradients')
+        help='Store parameters, gradients, and loss to file')
     parser.add_argument(
         '--summary',
         action='store_true',
@@ -35,34 +43,26 @@ def parse_args():
         help='Print model specifications to terminal')
 
     args = vars(parser.parse_args())
+    category = 'weightinit' if args['c'] == 'i' else 'weightnorm'
 
-    if args['model'] == None:
-        raise Exception("Must specify model category")
-
-    if args['init'] == None:
-        raise Exception("Must specify initialization technique")
-
-    if args['norm'] == None:
-        raise Exception("Must specify normalization technique")
-
-    if args['init'] != 'kaiming_uniform' and args['fan'] != None:
+    if args['i'] != 'kaiming_uniform' and args['f'] != None:
         raise Exception(
             "Fan in or fan out only allowed with Kaiming Uniform initialization")
-
-    if args['init'] == 'kaiming_uniform' and args['fan'] == None:
+    if args['i'] == 'kaiming_uniform' and args['f'] == None:
         raise Exception(
             "Kaiming Uniform initalization requires specification of fan in or fan out")
-
     if args['print']:
-        print("Model: " + args['model'])
-        print("Init: " + args['init'])
-        print("Norm: " + args['norm'])
+        print("Category: " + category)
+        print("Model: " + args['m'])
+        print("Init: " + args['i'])
+        print("Norm: " + args['n'])
 
-    return args
+    return args, category
 
 
-args = parse_args()
-breakpoint()
+args, category = parse_args()
+base_location = 'experiments/' + category + '/' + args['m'] + '-' + \
+    args['i'] + '-' + args['n'] + '/'
 
 
 # process training and testing data here
@@ -80,8 +80,7 @@ batch_size = 100
 test_size = 1
 epochs = 2
 count = 50 # how often we should save information to disk
-save = True
-location = 'experiments/weightinit/'
+groups = 1 if args['n'] != 'gn' else 2
 
 
 trainset = FashionMNIST(root='./data', train=True, download=False, transform=transform)
@@ -96,85 +95,90 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from summary import summary, summary_string
+from summary import summary_string
 
 # specify normalization technique here
-#from torch.nn import BatchNorm2d as Norm
-#from torch.nn import LayerNorm as Norm
-from torch.nn import GroupNorm as Norm
 from tqdm import tqdm
 
 
-def LeNet():
-    groups = -1
-    if type(Norm) == nn.GroupNorm:
-        groups = 2
-    else:
-        groups = 1
-    model = nn.Sequential(
-        nn.Conv2d(1, 6, 3, stride=1, padding=1, groups=groups),
+def build_model():
+    if args['m'] == 'lenet':
+        layers = [nn.Conv2d(1, 6, 3, stride=1, padding=1)]
 
-        #Norm(6),
-        #Norm([6, 28, 28]),
-        #Norm(num_groups=groups, num_channels=6),
+        if args['n'] == 'bn':
+            layers.append(nn.BatchNorm2d(6))
+        elif args['n'] == 'ln':
+            layers.append(nn.LayerNorm([6, 28, 28]))
+        elif args['n'] == 'gn':
+            layers.append(nn.GroupNorm(num_groups=groups, num_channels=6))
 
-        nn.ReLU(),
-        nn.MaxPool2d(kernel_size=2, stride=2),
-        nn.Conv2d(6, 16, 3, stride=1, padding=1, groups=groups),
+        layers.extend((
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(6, 16, 3, stride=1, padding=1, groups=groups)
+        ))
 
-        #Norm(16),
-        #Norm([16, 14, 14]),
-        #Norm(num_groups=groups, num_channels=16),
+        if args['n'] == 'bn':
+            layers.append(nn.BatchNorm2d(16))
+        elif args['n'] == 'ln':
+            layers.append(nn.LayerNorm([16, 14, 14]))
+        elif args['n'] == 'gn':
+            layers.append(nn.GroupNorm(num_groups=groups, num_channels=16))
 
-        nn.ReLU(),
-        nn.MaxPool2d(kernel_size=2, stride=2),
-        nn.Flatten(),
-        nn.Linear(784, 84),
-        nn.ReLU(),
-        nn.Linear(84, 10)
-    )
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters())
-    param_dict = {k:[] for k,_ in model.named_parameters()}
-    grad_dict = {k:[] for k,_ in model.named_parameters()}
-    breakpoint()
-    return model, criterion, optimizer, param_dict, grad_dict
+        layers.extend((
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Flatten(),
+            nn.Linear(784, 84),
+            nn.ReLU(),
+            nn.Linear(84, 10)
+        ))
 
+        model = nn.Sequential(*layers)
+    elif args['m'] == 'vgg':
+        layers = [nn.Conv2d(1, 8, 3, stride=1, padding=1)]
 
-def VGG():
-    groups = -1
-    if type(Norm) == nn.GroupNorm:
-        groups = 2
-    else:
-        groups = 1
-    model = nn.Sequential(
-        nn.Conv2d(1, 8, 3, stride=1, padding=1, groups=groups),
+        if args['n'] == 'bn':
+            layers.append(nn.BatchNorm2d(8))
+        elif args['n'] == 'ln':
+            layers.append(nn.LayerNorm([8, 28, 28]))
+        elif args['n'] == 'gn':
+            layers.append(nn.GroupNorm(num_groups=groups, num_channels=28))
 
-        #Norm(8),
-        #Norm([8, 28, 28]),
-        Norm(num_groups=groups, num_channels=8),
+        layers.extend((
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(8, 24, 3, stride=1, padding=1, groups=groups)
+        ))
 
-        nn.ReLU(),
-        nn.MaxPool2d(kernel_size=2, stride=2),
-        nn.Conv2d(8, 24, 3, stride=1, padding=1, groups=groups),
+        if args['n'] == 'bn':
+            layers.append(nn.BatchNorm2d(24))
+        elif args['n'] == 'ln':
+            layers.append(nn.LayerNorm([24, 14, 14]))
+        elif args['n'] == 'gn':
+            layers.append(nn.GroupNorm(num_groups=groups, num_channels=24))
 
-        #Norm(24),
-        #Norm([24, 14, 14]),
-        Norm(num_groups=groups, num_channels=24),
+        layers.extend((
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(24, 72, 3, stride=1, padding=1, groups=groups)
+        ))
 
-        nn.ReLU(),
-        nn.MaxPool2d(kernel_size=2, stride=2),
-        nn.Conv2d(24, 72, 3, stride=1, padding=1, groups=groups),
+        if args['n'] == 'bn':
+            layers.append(nn.BatchNorm2d(72))
+        elif args['n'] == 'ln':
+            layers.append(nn.LayerNorm([72, 7, 7]))
+        elif args['n'] == 'gn':
+            layers.append(nn.GroupNorm(num_groups=groups, num_channels=72))
 
-        #Norm(72),
-        #Norm([72, 7, 7]),
-        Norm(num_groups=groups, num_channels=72),
+        layers.extend((
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=7, stride=7),
+            nn.Flatten(),
+            nn.Linear(72, 10)
+        ))
 
-        nn.ReLU(),
-        nn.MaxPool2d(kernel_size=7, stride=7),
-        nn.Flatten(),
-        nn.Linear(72, 10)
-    )
+        model = nn.Sequential(*layers)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters())
     param_dict = {k:[] for k,_ in model.named_parameters()}
@@ -183,16 +187,46 @@ def VGG():
 
 
 def init_params(layer):
-    # https://pytorch.org/docs/stable/nn.init.html
-    if type(layer) == nn.Linear:
-        nn.init.kaiming_uniform_(layer.weight, mode='fan_in', nonlinearity='relu')
-        nn.init.uniform_(layer.bias)
-    elif type(layer) == nn.Conv2d:
-        nn.init.kaiming_uniform_(layer.weight, mode='fan_in', nonlinearity='relu')
-        nn.init.uniform_(layer.bias)
-    elif type(layer) == Norm:
+    norm_layers = [nn.BatchNorm2d, nn.LayerNorm, nn.GroupNorm]
+    conv_layers = [nn.Linear, nn.Conv2d]
+    all_layers = [nn.Linear, nn.Conv2d, nn.BatchNorm2d, nn.LayerNorm, nn.GroupNorm]
+
+    if args['i'] == 'zeros' and type(layer) in all_layers:
+        nn.init.zeros_(layer.weight)
+        nn.init.zeros_(layer.bias)
+    elif args['i'] == 'ones' and type(layer) in all_layers:
+        nn.init.ones_(layer.weight)
+        nn.init.ones_(layer.bias)
+    elif args['i'] == 'normal' and type(layer) in all_layers:
+        nn.init.normal_(layer.weight)
+        nn.init.normal_(layer.bias)
+    elif args['i'] == 'uniform' and type(layer) in all_layers:
         nn.init.uniform_(layer.weight)
         nn.init.uniform_(layer.bias)
+    elif args['i'] == 'xavier_normal':
+        if type(layer) in conv_layers:
+            nn.init.xavier_normal_(layer.weight, mode='fan_in', nonlinearity='relu')
+            nn.init.normal_(layer.bias)
+        elif type(layer) in norm_layers:
+            nn.init.normal_(layer.weight)
+            nn.init.normal_(layer.bias)
+    elif args['i'] == 'xavier_uniform':
+        if type(layer) in conv_layers:
+            nn.init.xavier_uniform_(layer.weight, mode='fan_in', nonlinearity='relu')
+            nn.init.uniform_(layer.bias)
+        elif type(layer) in norm_layers:
+            nn.init.uniform_(layer.weight)
+            nn.init.uniform_(layer.bias)
+    elif args['i'] == 'kaiming_uniform':
+        mode = 'fan_in' if args['f'] == 'i' else 'fan_out'
+        if type(layer) in conv_layers:
+            nn.init.kaiming_uniform_(layer.weight, mode=mode, nonlinearity='relu')
+            nn.init.uniform_(layer.bias)
+        elif type(layer) in norm_layers:
+            nn.init.uniform_(layer.weight)
+            nn.init.uniform_(layer.bias)
+    else:
+        raise Exception("Invalid initialization technique")
 
 
 def process_dict(numeric_dict):
@@ -202,11 +236,12 @@ def process_dict(numeric_dict):
 
 
 def checkpoint(param_dict, grad_dict):
-    process_dict(param_dict)
-    process_dict(grad_dict)
-    if save:
-        torch.save(param_dict, 'experiments/weightnorm/vgg-kaiunifi-gn/param.pt')
-        torch.save(grad_dict, 'experiments/weightnorm/vgg-kaiunifi-gn/grad.pt')
+    if args['numeric']:
+        process_dict(param_dict)
+        process_dict(grad_dict)
+        torch.save(param_dict, base_location + 'param.pt')
+        torch.save(grad_dict, base_location + 'grad.pt')
+        print("Numeric processing completed, now beginning inference...")
 
 
 def retrieve_numeric_values(model, mode, numeric_dict):
@@ -221,20 +256,16 @@ def retrieve_numeric_values(model, mode, numeric_dict):
             raise Exception("Invalid mode specified")
 
 
-def stack_numeric_values(param_dict, gradient_dict):
-    ...
-
-
 def io_summary(model):
-    if save:
-        with open('experiments/weightnorm/vgg-kaiunifi-gn/summary.txt', 'w') as f:
+    if args['summary']:
+        with open(base_location + 'summary.txt', 'w') as f:
             result, _ = summary_string(model, (1, 28, 28), device="cpu")
             f.write(result)
         f.close()
         print("Torchsummary successfully exported")
 
 
-def training(model, criterion, optimizer, param_dict, grad_dict, collect=True):
+def training(model, criterion, optimizer, param_dict, grad_dict):
     model.train()
     losses = []
     for e in range(epochs):
@@ -242,7 +273,7 @@ def training(model, criterion, optimizer, param_dict, grad_dict, collect=True):
         epoch_losses = []
         for step, data in tqdm(enumerate(trainloader, 0), total=len(trainloader)):
             # collect parameter values before optimizer.step()
-            if step % count == 0 and collect:
+            if step % count == 0 and args['numeric']:
                 retrieve_numeric_values(model, "params", param_dict)
 
             # execute mini-batch
@@ -262,14 +293,14 @@ def training(model, criterion, optimizer, param_dict, grad_dict, collect=True):
             epoch_losses.append(loss)
 
             # collect gradient values after computing the loss
-            if step % count == 0 and collect:
+            if step % count == 0 and args['numeric']:
                 retrieve_numeric_values(model, "gradients", grad_dict)
 
         losses.append(torch.stack(epoch_losses))
 
     print("Training completed...")
-    if save:
-        np.save('experiments/weightnorm/vgg-kaiunifi-gn/loss.npy', torch.stack(losses).detach().numpy())
+    if args['numeric']:
+        np.save(base_location + 'loss.npy', torch.stack(losses).detach().numpy())
 
 
 def inference(model):
@@ -288,19 +319,20 @@ def inference(model):
             _, correct = torch.max(labels.data, 1)
             accuracy += 1 if correct == predicted else 0
     loss = float("{0:.4f}".format(1 - accuracy/total))
-    print("Inference completed, loss rate: {}".format(loss))
+    if args['summary']:
+        with open(base_location + 'summary.txt', 'a') as f:
+            f.write("Inference completed, loss rate: {}".format(loss))
+        f.close()
+        print("Loss successfully exported to file")
 
 
 def main():
-    print("Batch size: " + str(batch_size))
-    model, criterion, optimizer, param_dict, grad_dict = VGG()
+    model, criterion, optimizer, param_dict, grad_dict = build_model()
     io_summary(model)
-    summary(model, (1, 28, 28), device="cpu")
     model.apply(init_params)
 
-    training(model, criterion, optimizer, param_dict, grad_dict, True)
+    training(model, criterion, optimizer, param_dict, grad_dict)
     checkpoint(grad_dict, param_dict)
-    print("Numeric processing completed, now beginning inference...")
     inference(model)
 
 

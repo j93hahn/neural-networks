@@ -4,8 +4,8 @@
 4. Batch size=100
 
 Ones
-LeNet NN: 0.5997
-VGG NN: 0.8993
+LeNet NN: 0.5183
+VGG NN: 0.8609
 
 Random Uniform
 LeNet BN: 0.1883
@@ -18,14 +18,14 @@ VGG GN: 0.1476
 VGG NN: 0.6697
 
 Random Normal
-LeNet BN: 0.1925
-LeNet LN: 0.1761
-LeNet GN: 0.2211
-LeNet NN: 0.4275
-VGG BN: 0.1442
-VGG LN: 0.1418
-VGG GN: 0.1550
-VGG NN: 0.2220
+LeNet BN: 0.1805
+LeNet LN: 0.2054
+LeNet GN: 0.1964
+LeNet NN: 0.4333
+VGG BN: 0.1454
+VGG LN: 0.1469
+VGG GN: 0.1664
+VGG NN: 0.2262
 
 Xavier Uniform
 LeNet BN: 0.1061
@@ -48,14 +48,14 @@ VGG GN: 0.1095
 VGG NN: 0.1192
 
 Kaiming Uniform - mode='fan_in'
-LeNet BN: 0.1029
-LeNet LN: 0.1089
-LeNet GN: 0.1026
-LeNet NN: 0.0973
-VGG BN: 0.1337
-VGG LN: 0.1060
-VGG GN: 0.1102
-VGG NN: 0.1053
+LeNet BN: 0.1028
+LeNet LN: 0.1088
+LeNet GN: 0.1014
+LeNet NN: 0.1015
+VGG BN: 0.1071
+VGG LN: 0.1164
+VGG GN: 0.1127
+VGG NN: 0.1080
 
 Kaiming Uniform - mode='fan_out'
 LeNet BN: 0.1367

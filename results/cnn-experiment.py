@@ -30,9 +30,9 @@ import numpy as np
 from summary import summary, summary_string
 
 # specify normalization technique here
-from torch.nn import BatchNorm2d as Norm
+#from torch.nn import BatchNorm2d as Norm
 #from torch.nn import LayerNorm as Norm
-#from torch.nn import GroupNorm as Norm
+from torch.nn import GroupNorm as Norm
 from tqdm import tqdm
 
 
@@ -82,7 +82,7 @@ def VGG():
 
         #Norm(8),
         #Norm([8, 28, 28]),
-        #Norm(num_groups=groups, num_channels=8),
+        Norm(num_groups=groups, num_channels=8),
 
         nn.ReLU(),
         nn.MaxPool2d(kernel_size=2, stride=2),
@@ -90,7 +90,7 @@ def VGG():
 
         #Norm(24),
         #Norm([24, 14, 14]),
-        #Norm(num_groups=groups, num_channels=24),
+        Norm(num_groups=groups, num_channels=24),
 
         nn.ReLU(),
         nn.MaxPool2d(kernel_size=2, stride=2),
@@ -98,7 +98,7 @@ def VGG():
 
         #Norm(72),
         #Norm([72, 7, 7]),
-        #Norm(num_groups=groups, num_channels=72),
+        Norm(num_groups=groups, num_channels=72),
 
         nn.ReLU(),
         nn.MaxPool2d(kernel_size=7, stride=7),
@@ -115,14 +115,14 @@ def VGG():
 def init_params(layer):
     # https://pytorch.org/docs/stable/nn.init.html
     if type(layer) == nn.Linear:
-        nn.init.normal_(layer.weight)
-        nn.init.normal_(layer.bias)
+        nn.init.kaiming_uniform_(layer.weight, mode='fan_in', nonlinearity='relu')
+        nn.init.uniform_(layer.bias)
     elif type(layer) == nn.Conv2d:
-        nn.init.normal_(layer.weight)
-        nn.init.normal_(layer.bias)
+        nn.init.kaiming_uniform_(layer.weight, mode='fan_in', nonlinearity='relu')
+        nn.init.uniform_(layer.bias)
     elif type(layer) == Norm:
-        nn.init.normal_(layer.weight)
-        nn.init.normal_(layer.bias)
+        nn.init.uniform_(layer.weight)
+        nn.init.uniform_(layer.bias)
 
 
 def process_dict(numeric_dict):
@@ -134,8 +134,8 @@ def process_dict(numeric_dict):
 def checkpoint(param_dict, grad_dict):
     process_dict(param_dict)
     process_dict(grad_dict)
-    torch.save(param_dict, 'experiments/weightnorm/lenet-nn-norm/param.pt')
-    torch.save(grad_dict, 'experiments/weightnorm/lenet-nn-norm/grad.pt')
+    torch.save(param_dict, 'experiments/weightnorm/vgg-kaiunifi-gn/param.pt')
+    torch.save(grad_dict, 'experiments/weightnorm/vgg-kaiunifi-gn/grad.pt')
 
 
 def retrieve_numeric_values(model, mode, numeric_dict):
@@ -149,7 +149,7 @@ def retrieve_numeric_values(model, mode, numeric_dict):
 
 
 def io_summary(model):
-    with open('experiments/weightnorm/lenet-nn-norm/summary.txt', 'w') as f:
+    with open('experiments/weightnorm/vgg-kaiunifi-gn/summary.txt', 'w') as f:
         result, _ = summary_string(model, (1, 28, 28), device="cpu")
         f.write(result)
     f.close()
@@ -190,7 +190,7 @@ def training(model, criterion, optimizer, param_dict, grad_dict, collect=True):
         losses.append(torch.stack(epoch_losses))
 
     print("Training completed...")
-    np.save('experiments/weightnorm/lenet-nn-norm/loss.npy', torch.stack(losses).detach().numpy())
+    np.save('experiments/weightnorm/vgg-kaiunifi-gn/loss.npy', torch.stack(losses).detach().numpy())
 
 
 def inference(model):
@@ -214,7 +214,7 @@ def inference(model):
 
 def main():
     print("Batch size: " + str(batch_size))
-    model, criterion, optimizer, param_dict, grad_dict = LeNet()
+    model, criterion, optimizer, param_dict, grad_dict = VGG()
     io_summary(model)
     summary(model, (1, 28, 28), device="cpu")
     model.apply(init_params)

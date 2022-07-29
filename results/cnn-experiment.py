@@ -11,8 +11,10 @@ transform = transforms.Compose(
 
 batch_size = 100
 test_size = 1
-epochs = 12
+epochs = 2
 count = 50 # how often we should save information to disk
+save = True
+location = 'experiments/weightinit/'
 
 
 trainset = FashionMNIST(root='./data', train=True, download=False, transform=transform)
@@ -68,6 +70,7 @@ def LeNet():
     optimizer = optim.Adam(model.parameters())
     param_dict = {k:[] for k,_ in model.named_parameters()}
     grad_dict = {k:[] for k,_ in model.named_parameters()}
+    breakpoint()
     return model, criterion, optimizer, param_dict, grad_dict
 
 
@@ -134,26 +137,34 @@ def process_dict(numeric_dict):
 def checkpoint(param_dict, grad_dict):
     process_dict(param_dict)
     process_dict(grad_dict)
-    torch.save(param_dict, 'experiments/weightnorm/vgg-kaiunifi-gn/param.pt')
-    torch.save(grad_dict, 'experiments/weightnorm/vgg-kaiunifi-gn/grad.pt')
+    if save:
+        torch.save(param_dict, 'experiments/weightnorm/vgg-kaiunifi-gn/param.pt')
+        torch.save(grad_dict, 'experiments/weightnorm/vgg-kaiunifi-gn/grad.pt')
 
 
 def retrieve_numeric_values(model, mode, numeric_dict):
     for k,v in model.named_parameters():
         if mode == "params":
-            numeric_dict[k].append(v.reshape(-1))
+            x = v.clone().detach()
+            numeric_dict[k].append(x.reshape(-1))
         elif mode == "gradients":
-            numeric_dict[k].append(v.grad.reshape(-1))
+            x = v.grad.clone().detach()
+            numeric_dict[k].append(x.reshape(-1))
         else:
             raise Exception("Invalid mode specified")
 
 
+def stack_numeric_values(param_dict, gradient_dict):
+    ...
+
+
 def io_summary(model):
-    with open('experiments/weightnorm/vgg-kaiunifi-gn/summary.txt', 'w') as f:
-        result, _ = summary_string(model, (1, 28, 28), device="cpu")
-        f.write(result)
-    f.close()
-    print("Torchsummary successfully exported")
+    if save:
+        with open('experiments/weightnorm/vgg-kaiunifi-gn/summary.txt', 'w') as f:
+            result, _ = summary_string(model, (1, 28, 28), device="cpu")
+            f.write(result)
+        f.close()
+        print("Torchsummary successfully exported")
 
 
 def training(model, criterion, optimizer, param_dict, grad_dict, collect=True):
@@ -190,7 +201,8 @@ def training(model, criterion, optimizer, param_dict, grad_dict, collect=True):
         losses.append(torch.stack(epoch_losses))
 
     print("Training completed...")
-    np.save('experiments/weightnorm/vgg-kaiunifi-gn/loss.npy', torch.stack(losses).detach().numpy())
+    if save:
+        np.save('experiments/weightnorm/vgg-kaiunifi-gn/loss.npy', torch.stack(losses).detach().numpy())
 
 
 def inference(model):

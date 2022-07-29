@@ -1,31 +1,37 @@
 import argparse
-
-
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Train, evaluate, and store data from convolutional models')
     parser.add_argument(
-        '--model',
-        choices=['LeNet', 'VGG'],
+        '-m',
+        required=True,
+        choices=['lenet', 'vgg'],
         help='Model category')
     parser.add_argument(
-        '--init',
+        '-c',
+        required=True,
+        choices=['i', 'n'],
+        help='Category this experiment is classified under')
+    parser.add_argument(
+        '-i',
+        required=True,
         choices=[
-            'zeros', 'ones', 'random', 'uniform', 'xavier_random',
+            'zeros', 'ones', 'normal', 'uniform', 'xavier_normal',
             'xavier_uniform', 'kaiming_uniform'],
         help='Initialization technique')
     parser.add_argument(
-        '--norm',
+        '-n',
+        required=True,
         choices=['nn', 'bn', 'ln', 'gn'],
         help='Normalization technique')
     parser.add_argument(
-        '--fan',
+        '-f',
         choices=['in', 'out'],
         help='Fan in or fan out, only for kaiming uniform initialization')
     parser.add_argument(
         '--numeric',
         action='store_true',
-        help='Store parameters and gradients')
+        help='Store parameters, gradients, and loss to file')
     parser.add_argument(
         '--summary',
         action='store_true',
@@ -36,34 +42,35 @@ def parse_args():
         help='Print model specifications to terminal')
 
     args = vars(parser.parse_args())
+    category = 'weightinit' if args['c'] == 'i' else 'weightnorm'
+    base_location = -1
 
-    if args['model'] == None:
-        raise Exception("Must specify model category")
-
-    if args['init'] == None:
-        raise Exception("Must specify initialization technique")
-
-    if args['norm'] == None:
-        raise Exception("Must specify normalization technique")
-
-    if args['init'] != 'kaiming_uniform' and args['fan'] != None:
+    if args['i'] != 'kaiming_uniform' and args['f'] != None:
         raise Exception(
             "Fan in or fan out only allowed with Kaiming Uniform initialization")
-
-    if args['init'] == 'kaiming_uniform' and args['fan'] == None:
+    if args['i'] == 'kaiming_uniform' and args['f'] == None:
         raise Exception(
             "Kaiming Uniform initalization requires specification of fan in or fan out")
-
+    if args['numeric'] or args['summary']:
+        import os
+        base_location = 'experiments/' + category + '/' + args['m'] + '-' + \
+            args['i'] + '-' + args['n'] + '/'
+        try:
+            os.mkdir(base_location)
+        except FileNotFoundError:
+            os.makedirs(base_location)
     if args['print']:
-        print("Model: " + args['model'])
-        print("Init: " + args['init'])
-        print("Norm: " + args['norm'])
+        print("Category: " + category)
+        print("Model: " + args['m'])
+        print("Init: " + args['i'])
+        print("Norm: " + args['n'])
 
-    return args
+    return args, base_location
 
 
 def main():
-    args = parse_args()
+    args, base_location = parse_args()
+    breakpoint()
 
 
 if __name__ == '__main__':

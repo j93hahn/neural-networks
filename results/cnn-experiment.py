@@ -74,6 +74,8 @@ def parse_args():
             os.mkdir(base_location)
         except FileNotFoundError:
             os.makedirs(base_location)
+        except FileExistsError:
+            pass
     if args['print']:
         print("Category: " + category)
         print("Model: " + args['m'])
@@ -97,7 +99,7 @@ transform = transforms.Compose(
 args, base_location = parse_args()
 batch_size = 100
 test_size = 1
-epochs = 12
+epochs = 1
 count = 50 # how often we should save information to disk
 groups = 1 if args['n'] != 'gn' else 2
 
@@ -337,8 +339,10 @@ def inference(model):
             accuracy += 1 if correct == predicted else 0
     loss = float("{0:.4f}".format(1 - accuracy/total))
     if args['summary']:
-        with open(base_location + 'summary.txt', 'a') as f:
-            f.write("Inference completed, loss rate: {}".format(loss))
+        with open('losses.txt', 'a') as f:
+            f.write("(Model: {}, Init Method: {}, Norm: {}, Fan: {}) loss rate: {}".format(
+                args['m'], args['i'], args['n'], args['f'], loss)
+            )
         f.close()
         print("Loss successfully exported to file")
     if args['print']:

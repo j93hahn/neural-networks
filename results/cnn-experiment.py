@@ -97,7 +97,7 @@ transform = transforms.Compose(
 args, base_location = parse_args()
 batch_size = 100
 test_size = 1
-epochs = 1
+epochs = 12
 count = 50 # how often we should save information to disk
 groups = 1 if args['n'] != 'gn' else 2
 

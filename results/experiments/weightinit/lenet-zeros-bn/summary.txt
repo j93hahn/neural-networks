@@ -23,4 +23,3 @@ Forward/backward pass size (MB): 0.20
 Params size (MB): 0.26
 Estimated Total Size (MB): 0.46
 ----------------------------------------------------------------
-Inference completed, loss rate: 0.9

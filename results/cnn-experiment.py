@@ -34,7 +34,11 @@ def parse_args():
     parser.add_argument(
         '--summary',
         action='store_true',
-        help='Write summary and accuracy loss to file')
+        help='Write summary to file')
+    parser.add_argument(
+        '--loss',
+        action='store_true',
+        help='Write loss to output losses file')
     parser.add_argument(
         '--print',
         action='store_true',
@@ -74,6 +78,9 @@ def parse_args():
             os.mkdir(base_location)
         except FileNotFoundError:
             os.makedirs(base_location)
+        except FileExistsError:
+            args['numeric'] == False
+            args['summary'] == False
     if args['print']:
         print("Category: " + category)
         print("Model: " + args['m'])
@@ -336,11 +343,12 @@ def inference(model):
             _, correct = torch.max(labels.data, 1)
             accuracy += 1 if correct == predicted else 0
     loss = float("{0:.4f}".format(1 - accuracy/total))
-    if args['summary']:
+    if args['loss']:
         with open('losses.txt', 'a') as f:
             f.write("(Model: {}, Init Method: {}, Norm: {}, Fan: {}) loss rate: {}".format(
                 args['m'], args['i'], args['n'], args['f'], loss)
             )
+            f.write("\n")
         f.close()
         print("Loss successfully exported to file")
     if args['print']:

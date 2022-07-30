@@ -74,8 +74,6 @@ def parse_args():
             os.mkdir(base_location)
         except FileNotFoundError:
             os.makedirs(base_location)
-        except FileExistsError:
-            pass
     if args['print']:
         print("Category: " + category)
         print("Model: " + args['m'])

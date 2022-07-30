@@ -169,7 +169,7 @@ def build_model():
         elif args['n'] == 'ln':
             layers.append(nn.LayerNorm([8, 28, 28]))
         elif args['n'] == 'gn':
-            layers.append(nn.GroupNorm(num_groups=groups, num_channels=28))
+            layers.append(nn.GroupNorm(num_groups=groups, num_channels=8))
 
         layers.extend((
             nn.ReLU(),
@@ -231,14 +231,14 @@ def init_params(layer):
         nn.init.uniform_(layer.bias)
     elif args['i'] == 'xn':
         if type(layer) in conv_layers:
-            nn.init.xavier_normal_(layer.weight, mode='fan_in', nonlinearity='relu')
+            nn.init.xavier_normal_(layer.weight)
             nn.init.normal_(layer.bias)
         elif type(layer) in norm_layers:
             nn.init.normal_(layer.weight)
             nn.init.normal_(layer.bias)
     elif args['i'] == 'xu':
         if type(layer) in conv_layers:
-            nn.init.xavier_uniform_(layer.weight, mode='fan_in', nonlinearity='relu')
+            nn.init.xavier_uniform_(layer.weight)
             nn.init.uniform_(layer.bias)
         elif type(layer) in norm_layers:
             nn.init.uniform_(layer.weight)

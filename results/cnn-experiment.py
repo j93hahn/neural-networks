@@ -1,6 +1,6 @@
 # parse arguments first
-import argparse
 def parse_args():
+    import argparse
     parser = argparse.ArgumentParser(
         description='Train, evaluate, and store data from convolutional models')
     parser.add_argument(
@@ -90,6 +90,14 @@ def parse_args():
     return args, base_location
 
 
+args, base_location = parse_args()
+batch_size = 100
+test_size = 1
+epochs = 12
+count = 50 # how often we should save information to disk
+groups = 1 if args['n'] != 'gn' else 2
+
+
 # process training and testing data here
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
@@ -99,14 +107,6 @@ from torchvision.datasets import MNIST, FashionMNIST
 transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize((0.1307,), (0.3081,))])
-
-
-args, base_location = parse_args()
-batch_size = 100
-test_size = 1
-epochs = 12
-count = 50 # how often we should save information to disk
-groups = 1 if args['n'] != 'gn' else 2
 
 
 if args['data'] == 'fashion':
@@ -127,7 +127,6 @@ import torch.optim as optim
 import numpy as np
 from summary import summary, summary_string
 
-# specify normalization technique here
 from tqdm import tqdm
 
 
@@ -351,6 +350,7 @@ def inference(model):
             _, correct = torch.max(labels.data, 1)
             accuracy += 1 if correct == predicted else 0
     loss = float("{0:.4f}".format(1 - accuracy/total))
+
     if args['loss']:
         with open('experiments/losses.txt', 'a') as f:
             f.write("(Model: {}, Init Method: {}, Norm: {}, Fan: {}) loss rate: {}".format(
@@ -359,11 +359,12 @@ def inference(model):
             f.write("\n")
         f.close()
         print("Loss successfully exported to file")
+
     if args['print']:
         print("Inference completed, loss rate: {}".format(loss))
 
 
-def main():
+if __name__ == '__main__':
     model, criterion, optimizer, param_dict, grad_dict = build_model()
     io_summary(model)
     model.apply(init_params)
@@ -371,7 +372,3 @@ def main():
     training(model, criterion, optimizer, param_dict, grad_dict)
     checkpoint(grad_dict, param_dict)
     inference(model)
-
-
-if __name__ == '__main__':
-    main()

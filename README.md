@@ -32,3 +32,7 @@ The conv/ directory is the jewel of the crown for my entire neural-networks/ rep
 ### diffusion-arch/
 
 This directory contains several papers on diffusion modeling, as well as a link to a diffusion model hackathon which I participated in with members of my research lab in June 2022.
+
+### results/
+
+This subdirectory contains information on the experiments I ran, as well as the script I used to create my results. As part of these experiments, I also used a Jupyter notebook to visualize the gradients and parameters of various models in order to play around and uncover relationships behind weight initialization and weight normalization.

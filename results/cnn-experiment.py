@@ -28,6 +28,11 @@ def parse_args():
         choices=['in', 'out'],
         help='Fan in or fan out, only for kaiming uniform initialization')
     parser.add_argument(
+        '--data',
+        choices=['mnist', 'fashion'],
+        default='fashion',
+        help='Dataset to use in current experiment')
+    parser.add_argument(
         '--numeric',
         action='store_true',
         help='Store parameters, gradients, and loss to file')
@@ -42,7 +47,7 @@ def parse_args():
     parser.add_argument(
         '--print',
         action='store_true',
-        help='Print model specifications to terminal')
+        help='Print model specifications and loss to terminal')
 
     args = vars(parser.parse_args())
     category = 'weightinit' if args['c'] == 'i' else 'weightnorm'
@@ -81,11 +86,6 @@ def parse_args():
         except FileExistsError:
             args['numeric'] == False
             args['summary'] == False
-    if args['print']:
-        print("Category: " + category)
-        print("Model: " + args['m'])
-        print("Init: " + args['i'])
-        print("Norm: " + args['n'])
 
     return args, base_location
 
@@ -93,7 +93,7 @@ def parse_args():
 # process training and testing data here
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-from torchvision.datasets import FashionMNIST
+from torchvision.datasets import MNIST, FashionMNIST
 
 
 transform = transforms.Compose(
@@ -109,10 +109,14 @@ count = 50 # how often we should save information to disk
 groups = 1 if args['n'] != 'gn' else 2
 
 
-trainset = FashionMNIST(root='./data', train=True, download=False, transform=transform)
-trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
+if args['data'] == 'fashion':
+    trainset = FashionMNIST(root='./data', train=True, download=False, transform=transform)
+    testset = FashionMNIST(root='./data', train=False, download=False, transform=transform)
+else:
+    trainset = MNIST(root='./data', train=True, download=False, transform=transform)
+    testset = MNIST(root='./data', train=False, download=False, transform=transform)
 
-testset = FashionMNIST(root='./data', train=False, download=False, transform=transform)
+trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
 testloader = DataLoader(testset, batch_size=test_size, shuffle=True, num_workers=2)
 
 
@@ -121,7 +125,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from summary import summary_string
+from summary import summary, summary_string
 
 # specify normalization technique here
 from tqdm import tqdm
@@ -209,6 +213,10 @@ def build_model():
     optimizer = optim.Adam(model.parameters())
     param_dict = {k:[] for k,_ in model.named_parameters()}
     grad_dict = {k:[] for k,_ in model.named_parameters()}
+
+    if args['print']:
+        summary(model, (1, 28, 28), device="cpu")
+
     return model, criterion, optimizer, param_dict, grad_dict
 
 

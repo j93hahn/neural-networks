@@ -352,7 +352,7 @@ def inference(model):
             accuracy += 1 if correct == predicted else 0
     loss = float("{0:.4f}".format(1 - accuracy/total))
     if args['loss']:
-        with open('losses.txt', 'a') as f:
+        with open('experiments/losses.txt', 'a') as f:
             f.write("(Model: {}, Init Method: {}, Norm: {}, Fan: {}) loss rate: {}".format(
                 args['m'], args['i'], args['n'], args['f'], loss)
             )

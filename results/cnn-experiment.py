@@ -209,7 +209,7 @@ def build_model():
 
         model = nn.Sequential(*layers)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters())
+    optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
     param_dict = {k:[] for k,_ in model.named_parameters()}
     grad_dict = {k:[] for k,_ in model.named_parameters()}
 

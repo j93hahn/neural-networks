@@ -131,7 +131,7 @@ from tqdm import tqdm
 
 
 def build_model():
-    if args['m'] == 'lenet':
+    """if args['m'] == 'lenet':
         layers = [nn.Conv2d(1, 6, 3, stride=1, padding=1)]
 
         if args['n'] == 'bn':
@@ -207,7 +207,15 @@ def build_model():
             nn.Linear(72, 10)
         ))
 
-        model = nn.Sequential(*layers)
+        model = nn.Sequential(*layers)"""
+
+    model = nn.Sequential(
+        nn.Conv2d(1, 8, 3, padding=1, stride=1),
+        nn.ReLU(),
+        nn.MaxPool2d(2, 2),
+        nn.Flatten(),
+        nn.Linear(1568, 10)
+    )
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
     param_dict = {k:[] for k,_ in model.named_parameters()}
@@ -234,8 +242,8 @@ def init_params(layer):
         nn.init.normal_(layer.weight)
         nn.init.normal_(layer.bias)
     elif args['i'] == 'u' and type(layer) in all_layers:
-        nn.init.uniform_(layer.weight)
-        nn.init.uniform_(layer.bias)
+        nn.init.uniform_(layer.weight, a=-1, b=1)
+        nn.init.uniform_(layer.bias, a=-1, b=1)
     elif args['i'] == 'xn':
         if type(layer) in conv_layers:
             nn.init.xavier_normal_(layer.weight)
@@ -246,18 +254,18 @@ def init_params(layer):
     elif args['i'] == 'xu':
         if type(layer) in conv_layers:
             nn.init.xavier_uniform_(layer.weight)
-            nn.init.uniform_(layer.bias)
+            nn.init.uniform_(layer.bias, a=-1, b=1)
         elif type(layer) in norm_layers:
-            nn.init.uniform_(layer.weight)
-            nn.init.uniform_(layer.bias)
+            nn.init.uniform_(layer.weight, a=-1, b=1)
+            nn.init.uniform_(layer.bias, a=-1, b=1)
     elif args['i'] == 'ku':
         mode = 'fan_in' if args['f'] == 'in' else 'fan_out'
         if type(layer) in conv_layers:
             nn.init.kaiming_uniform_(layer.weight, mode=mode, nonlinearity='relu')
-            nn.init.uniform_(layer.bias)
+            nn.init.uniform_(layer.bias, a=-1, b=1)
         elif type(layer) in norm_layers:
-            nn.init.uniform_(layer.weight)
-            nn.init.uniform_(layer.bias)
+            nn.init.uniform_(layer.weight, a=-1, b=1)
+            nn.init.uniform_(layer.bias, a=-1, b=1)
 
 
 def process_dict(numeric_dict):
@@ -352,7 +360,7 @@ def inference(model):
     loss = float("{0:.4f}".format(1 - accuracy/total))
 
     if args['loss']:
-        with open('experiments/losses.txt', 'a') as f:
+        with open('experiments/uniform-losses.txt', 'a') as f:
             f.write("(Model: {}, Init Method: {}, Norm: {}, Fan: {}) loss rate: {}".format(
                 args['m'], args['i'], args['n'], args['f'], loss)
             )

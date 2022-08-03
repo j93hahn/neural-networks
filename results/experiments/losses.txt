@@ -7,21 +7,21 @@ Experiments ran on July 31, 2022
 (Model: lenet, Init Method: n, Norm: bn, Fan: None) loss rate: 0.9000
 (Model: vgg, Init Method: n, Norm: bn, Fan: None) loss rate: 0.1482
 (Model: lenet, Init Method: u, Norm: bn, Fan: None) loss rate: 0.9000
-(Model: vgg, Init Method: u, Norm: bn, Fan: None) loss rate: 0.1828
+(Model: vgg, Init Method: u, Norm: bn, Fan: None) loss rate: 0.1191
 (Model: lenet, Init Method: xn, Norm: bn, Fan: None) loss rate: 0.1116
 (Model: vgg, Init Method: xn, Norm: bn, Fan: None) loss rate: 0.1152
-(Model: lenet, Init Method: xu, Norm: bn, Fan: None) loss rate: 0.1093
-(Model: vgg, Init Method: xu, Norm: bn, Fan: None) loss rate: 0.1286
+(Model: lenet, Init Method: xu, Norm: bn, Fan: None) loss rate: 0.1071
+(Model: vgg, Init Method: xu, Norm: bn, Fan: None) loss rate: 0.1126
 
 
-(Model: lenet, Init Method: ku, Norm: bn, Fan: in) loss rate: 0.1120
+(Model: lenet, Init Method: ku, Norm: bn, Fan: in) loss rate: 0.1032
 (Model: lenet, Init Method: ku, Norm: ln, Fan: in) loss rate: 0.9000
-(Model: lenet, Init Method: ku, Norm: gn, Fan: in) loss rate: 0.1457
-(Model: lenet, Init Method: ku, Norm: nn, Fan: in) loss rate: 0.1490
-(Model: vgg, Init Method: ku, Norm: bn, Fan: in) loss rate: 0.1136
-(Model: vgg, Init Method: ku, Norm: ln, Fan: in) loss rate: 0.1115
+(Model: lenet, Init Method: ku, Norm: gn, Fan: in) loss rate: 0.1115
+(Model: lenet, Init Method: ku, Norm: nn, Fan: in) loss rate: 0.1248
+(Model: vgg, Init Method: ku, Norm: bn, Fan: in) loss rate: 0.1082
+(Model: vgg, Init Method: ku, Norm: ln, Fan: in) loss rate: 0.1202
 (Model: vgg, Init Method: ku, Norm: gn, Fan: in) loss rate: 0.1267
-(Model: vgg, Init Method: ku, Norm: nn, Fan: in) loss rate: 0.9000
+(Model: vgg, Init Method: ku, Norm: nn, Fan: in) loss rate: 0.2713
 
 
 (Model: lenet, Init Method: n, Norm: bn, Fan: None) loss rate: 0.9000
@@ -42,20 +42,20 @@ Experiments ran on July 31, 2022
 (Model: lenet, Init Method: u, Norm: ln, Fan: None) loss rate: 0.9000
 (Model: lenet, Init Method: u, Norm: gn, Fan: None) loss rate: 0.9000
 (Model: lenet, Init Method: u, Norm: nn, Fan: None) loss rate: 0.9000
-(Model: vgg, Init Method: u, Norm: bn, Fan: None) loss rate: 0.1940
-(Model: vgg, Init Method: u, Norm: ln, Fan: None) loss rate: 0.1656
-(Model: vgg, Init Method: u, Norm: gn, Fan: None) loss rate: 0.1556
+(Model: vgg, Init Method: u, Norm: bn, Fan: None) loss rate: 0.1298
+(Model: vgg, Init Method: u, Norm: ln, Fan: None) loss rate: 0.1068
+(Model: vgg, Init Method: u, Norm: gn, Fan: None) loss rate: 0.1423
 (Model: vgg, Init Method: u, Norm: nn, Fan: None) loss rate: 0.9000
 
 
-(Model: lenet, Init Method: xu, Norm: bn, Fan: None) loss rate: 0.1281
+(Model: lenet, Init Method: xu, Norm: bn, Fan: None) loss rate: 0.1019
 (Model: lenet, Init Method: xu, Norm: ln, Fan: None) loss rate: 0.9000
-(Model: lenet, Init Method: xu, Norm: gn, Fan: None) loss rate: 0.1189
-(Model: lenet, Init Method: xu, Norm: nn, Fan: None) loss rate: 0.1503
-(Model: vgg, Init Method: xu, Norm: bn, Fan: None) loss rate: 0.1155
-(Model: vgg, Init Method: xu, Norm: ln, Fan: None) loss rate: 0.1108
-(Model: vgg, Init Method: xu, Norm: gn, Fan: None) loss rate: 0.1174
-(Model: vgg, Init Method: xu, Norm: nn, Fan: None) loss rate: 0.9000
+(Model: lenet, Init Method: xu, Norm: gn, Fan: None) loss rate: 0.1151
+(Model: lenet, Init Method: xu, Norm: nn, Fan: None) loss rate: 0.1210
+(Model: vgg, Init Method: xu, Norm: bn, Fan: None) loss rate: 0.1148
+(Model: vgg, Init Method: xu, Norm: ln, Fan: None) loss rate: 0.1198
+(Model: vgg, Init Method: xu, Norm: gn, Fan: None) loss rate: 0.1501
+(Model: vgg, Init Method: xu, Norm: nn, Fan: None) loss rate: 0.1373
 
 
 (Model: lenet, Init Method: xn, Norm: bn, Fan: None) loss rate: 0.1242
@@ -68,11 +68,11 @@ Experiments ran on July 31, 2022
 (Model: vgg, Init Method: xn, Norm: nn, Fan: None) loss rate: 0.9000
 
 
-(Model: lenet, Init Method: ku, Norm: bn, Fan: out) loss rate: 0.1895
+(Model: lenet, Init Method: ku, Norm: bn, Fan: out) loss rate: 0.1153
 (Model: lenet, Init Method: ku, Norm: ln, Fan: out) loss rate: 0.9000
-(Model: lenet, Init Method: ku, Norm: gn, Fan: out) loss rate: 0.1684
-(Model: lenet, Init Method: ku, Norm: nn, Fan: out) loss rate: 0.9000
-(Model: vgg, Init Method: ku, Norm: bn, Fan: out) loss rate: 0.1023
-(Model: vgg, Init Method: ku, Norm: ln, Fan: out) loss rate: 0.1223
-(Model: vgg, Init Method: ku, Norm: gn, Fan: out) loss rate: 0.1636
+(Model: lenet, Init Method: ku, Norm: gn, Fan: out) loss rate: 0.9000
+(Model: lenet, Init Method: ku, Norm: nn, Fan: out) loss rate: 0.2381
+(Model: vgg, Init Method: ku, Norm: bn, Fan: out) loss rate: 0.1080
+(Model: vgg, Init Method: ku, Norm: ln, Fan: out) loss rate: 0.1385
+(Model: vgg, Init Method: ku, Norm: gn, Fan: out) loss rate: 0.1620
 (Model: vgg, Init Method: ku, Norm: nn, Fan: out) loss rate: 0.9000

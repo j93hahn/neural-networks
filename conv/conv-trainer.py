@@ -11,7 +11,7 @@ def training(model, loss, optimizer, scheduler):
     train_labels = mnist.train_labels
     model.train()
 
-    epochs = 45
+    epochs = 12
     batch_size = 100
     T = int(train_data.shape[0]/batch_size)
     ii = np.arange(0, T)

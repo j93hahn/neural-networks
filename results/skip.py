@@ -39,100 +39,32 @@ from tqdm import tqdm
 
 
 def build_model():
-    """if args['m'] == 'lenet':
-        layers = [nn.Conv2d(1, 6, 3, stride=1, padding=1)]
-
-        if args['n'] == 'bn':
-            layers.append(nn.BatchNorm2d(6))
-        elif args['n'] == 'ln':
-            layers.append(nn.LayerNorm([6, 28, 28]))
-        elif args['n'] == 'gn':
-            layers.append(nn.GroupNorm(num_groups=groups, num_channels=6))
-
-        layers.extend((
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(6, 16, 3, stride=1, padding=1, groups=groups)
-        ))
-
-        if args['n'] == 'bn':
-            layers.append(nn.BatchNorm2d(16))
-        elif args['n'] == 'ln':
-            layers.append(nn.LayerNorm([16, 14, 14]))
-        elif args['n'] == 'gn':
-            layers.append(nn.GroupNorm(num_groups=groups, num_channels=16))
-
-        layers.extend((
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Flatten(),
-            nn.Linear(784, 84),
-            nn.ReLU(),
-            nn.Linear(84, 10)
-        ))
-
-        model = nn.Sequential(*layers)
-    elif args['m'] == 'vgg':
-        layers = [nn.Conv2d(1, 8, 3, stride=1, padding=1)]
-
-        if args['n'] == 'bn':
-            layers.append(nn.BatchNorm2d(8))
-        elif args['n'] == 'ln':
-            layers.append(nn.LayerNorm([8, 28, 28]))
-        elif args['n'] == 'gn':
-            layers.append(nn.GroupNorm(num_groups=groups, num_channels=8))
-
-        layers.extend((
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(8, 24, 3, stride=1, padding=1, groups=groups)
-        ))
-
-        if args['n'] == 'bn':
-            layers.append(nn.BatchNorm2d(24))
-        elif args['n'] == 'ln':
-            layers.append(nn.LayerNorm([24, 14, 14]))
-        elif args['n'] == 'gn':
-            layers.append(nn.GroupNorm(num_groups=groups, num_channels=24))
-
-        layers.extend((
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(24, 72, 3, stride=1, padding=1, groups=groups)
-        ))
-
-        if args['n'] == 'bn':
-            layers.append(nn.BatchNorm2d(72))
-        elif args['n'] == 'ln':
-            layers.append(nn.LayerNorm([72, 7, 7]))
-        elif args['n'] == 'gn':
-            layers.append(nn.GroupNorm(num_groups=groups, num_channels=72))
-
-        layers.extend((
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=7, stride=7),
-            nn.Flatten(),
-            nn.Linear(72, 10)
-        ))
-
-        model = nn.Sequential(*layers)"""
-
+    breakpoint()
     model = nn.Sequential(
-        nn.Conv2d(1, 8, 3, padding=1, stride=1),
+        nn.Conv2d(1, 64, 3, padding=1, stride=1),
+        nn.ReLU(),
+        nn.Conv2d(64, 64, 3, padding=1, stride=1),
         nn.ReLU(),
         nn.MaxPool2d(2, 2),
-        nn.Flatten(),
+
+        nn.Conv2d(64, 128, 3, padding=1, stride=1),
+        nn.ReLU(),
+        nn.Conv2d(128, 128, 3, padding=1, stride=1),
+        nn.ReLU(),
+        nn.MaxPool2d(2, 2),
+
+        nn.Conv2d(128, 256, 3, padding=1, stride=1),
+        nn.ReLU(),
+        nn.Conv2d(256, 256, 3, padding=1, stride=1),
+        nn.ReLU(),
+        nn.MaxPool2d(7, 7),
+
         nn.Linear(1568, 10)
     )
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
-    param_dict = {k:[] for k,_ in model.named_parameters()}
-    grad_dict = {k:[] for k,_ in model.named_parameters()}
 
-    if args['print']:
-        summary(model, (1, 28, 28), device="cpu")
-
-    return model, criterion, optimizer, param_dict, grad_dict
+    return model, criterion, optimizer
 
 
 def init_params(layer):
@@ -266,25 +198,13 @@ def inference(model):
             _, correct = torch.max(labels.data, 1)
             accuracy += 1 if correct == predicted else 0
     loss = float("{0:.4f}".format(1 - accuracy/total))
-
-    if args['loss']:
-        with open('experiments/uniform-losses.txt', 'a') as f:
-            f.write("(Model: {}, Init Method: {}, Norm: {}, Fan: {}) loss rate: {}".format(
-                args['m'], args['i'], args['n'], args['f'], loss)
-            )
-            f.write("\n")
-        f.close()
-        print("Loss successfully exported to file")
-
-    if args['print']:
-        print("Inference completed, loss rate: {}".format(loss))
+    print(loss)
 
 
 if __name__ == '__main__':
-    model, criterion, optimizer, param_dict, grad_dict = build_model()
+    model, criterion, optimizer = build_model()
     io_summary(model)
     model.apply(init_params)
 
     training(model, criterion, optimizer, param_dict, grad_dict)
-    checkpoint(grad_dict, param_dict)
     inference(model)

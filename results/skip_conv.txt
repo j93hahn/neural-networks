@@ -1,0 +1,36 @@
+Note: Biases are all initialized to 0; weights are initialized using corresponding technique
+
+Only 1 epoch of training applied here --
+
+Freeze all Conv layers
+
+losses1: normal initialization, 0.3283
+losses2: uniform initialization, 0.9000
+losses3: xavier normal initialization, 0.6342
+losses4: xavier uniform initialization, 0.5210
+
+Freeze all Linear layers
+
+lossesA: normal initialization,
+lossesB: uniform initialization,
+lossesC: xavier normal initialization,
+lossesD: xavier uniform initialization,
+
+
+
+
+Now, apply 10 epochs of training here --
+
+Freeze all Conv layers
+
+losses1: normal initialization,
+losses2: uniform initialization,
+losses3: xavier normal initialization,
+losses4: xavier uniform initialization,
+
+Freeze all Linear layers
+
+lossesA: normal initialization,
+lossesB: uniform initialization,
+lossesC: xavier normal initialization,
+lossesD: xavier uniform initialization,

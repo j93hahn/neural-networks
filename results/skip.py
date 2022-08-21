@@ -7,7 +7,6 @@ learn?
 batch_size = 100
 test_size = 1
 epochs = 1
-count = 50 # how often we should save information to disk
 
 
 # process training and testing data here
@@ -69,14 +68,22 @@ def build_model():
 
 def init_params(layer):
     if type(layer) == nn.Conv2d or type(layer) == nn.Linear:
-        nn.init.kaiming_normal_(layer.weight)
+        nn.init.xavier_uniform_(layer.weight)
         nn.init.zeros_(layer.bias)
 
 
 # freeze Conv2d layer parameters here
-def freeze(model):
+def freeze_conv_layers(model):
     for index, layer in model.named_children():
         if type(layer) == nn.Conv2d:
+            layer.weight.requires_grad = False
+            layer.bias.requires_grad = False
+
+
+# freeze Linear layer parameters here
+def freeze_linear_layers(model):
+    for index, layer in model.named_children():
+        if type(layer) == nn.Linear:
             layer.weight.requires_grad = False
             layer.bias.requires_grad = False
 
@@ -132,8 +139,8 @@ def inference(model):
 if __name__ == '__main__':
     model, criterion, optimizer = build_model()
     model.apply(init_params)
-    freeze(model)
+    freeze_conv_layers(model)
 
     losses = training(model, criterion, optimizer)
-    np.save('losses1.npy', losses) # loss1: 0.2619 (!)
+    np.save('epoch_1/losses4.npy', losses)
     inference(model)

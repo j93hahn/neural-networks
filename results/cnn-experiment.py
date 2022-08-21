@@ -131,7 +131,7 @@ from tqdm import tqdm
 
 
 def build_model():
-    """if args['m'] == 'lenet':
+    if args['m'] == 'lenet':
         layers = [nn.Conv2d(1, 6, 3, stride=1, padding=1)]
 
         if args['n'] == 'bn':
@@ -207,15 +207,8 @@ def build_model():
             nn.Linear(72, 10)
         ))
 
-        model = nn.Sequential(*layers)"""
+        model = nn.Sequential(*layers)
 
-    model = nn.Sequential(
-        nn.Conv2d(1, 8, 3, padding=1, stride=1),
-        nn.ReLU(),
-        nn.MaxPool2d(2, 2),
-        nn.Flatten(),
-        nn.Linear(1568, 10)
-    )
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
     param_dict = {k:[] for k,_ in model.named_parameters()}

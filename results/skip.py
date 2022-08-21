@@ -6,14 +6,14 @@ learn?
 
 batch_size = 100
 test_size = 1
-epochs = 12
+epochs = 1
 count = 50 # how often we should save information to disk
 
 
 # process training and testing data here
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-from torchvision.datasets import MNIST, FashionMNIST
+from torchvision.datasets import FashionMNIST
 
 
 transform = transforms.Compose(
@@ -33,13 +33,11 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from summary import summary, summary_string
 
 from tqdm import tqdm
 
 
 def build_model():
-    breakpoint()
     model = nn.Sequential(
         nn.Conv2d(1, 64, 3, padding=1, stride=1),
         nn.ReLU(),
@@ -59,8 +57,10 @@ def build_model():
         nn.ReLU(),
         nn.MaxPool2d(7, 7),
 
-        nn.Linear(1568, 10)
+        nn.Flatten(),
+        nn.Linear(256, 10)
     )
+
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
 
@@ -68,93 +68,26 @@ def build_model():
 
 
 def init_params(layer):
-    norm_layers = [nn.BatchNorm2d, nn.LayerNorm, nn.GroupNorm]
-    conv_layers = [nn.Linear, nn.Conv2d]
-    all_layers = [nn.Linear, nn.Conv2d, nn.BatchNorm2d, nn.LayerNorm, nn.GroupNorm]
-
-    if args['i'] == 'z' and type(layer) in all_layers:
-        nn.init.zeros_(layer.weight)
+    if type(layer) == nn.Conv2d or type(layer) == nn.Linear:
+        nn.init.kaiming_normal_(layer.weight)
         nn.init.zeros_(layer.bias)
-    elif args['i'] == 'o' and type(layer) in all_layers:
-        nn.init.ones_(layer.weight)
-        nn.init.ones_(layer.bias)
-    elif args['i'] == 'n' and type(layer) in all_layers:
-        nn.init.normal_(layer.weight)
-        nn.init.normal_(layer.bias)
-    elif args['i'] == 'u' and type(layer) in all_layers:
-        nn.init.uniform_(layer.weight, a=-1, b=1)
-        nn.init.uniform_(layer.bias, a=-1, b=1)
-    elif args['i'] == 'xn':
-        if type(layer) in conv_layers:
-            nn.init.xavier_normal_(layer.weight)
-            nn.init.normal_(layer.bias)
-        elif type(layer) in norm_layers:
-            nn.init.normal_(layer.weight)
-            nn.init.normal_(layer.bias)
-    elif args['i'] == 'xu':
-        if type(layer) in conv_layers:
-            nn.init.xavier_uniform_(layer.weight)
-            nn.init.uniform_(layer.bias, a=-1, b=1)
-        elif type(layer) in norm_layers:
-            nn.init.uniform_(layer.weight, a=-1, b=1)
-            nn.init.uniform_(layer.bias, a=-1, b=1)
-    elif args['i'] == 'ku':
-        mode = 'fan_in' if args['f'] == 'in' else 'fan_out'
-        if type(layer) in conv_layers:
-            nn.init.kaiming_uniform_(layer.weight, mode=mode, nonlinearity='relu')
-            nn.init.uniform_(layer.bias, a=-1, b=1)
-        elif type(layer) in norm_layers:
-            nn.init.uniform_(layer.weight, a=-1, b=1)
-            nn.init.uniform_(layer.bias, a=-1, b=1)
 
 
-def process_dict(numeric_dict):
-    for k in numeric_dict.keys():
-        ele = torch.stack(numeric_dict[k]).detach().numpy()
-        numeric_dict[k] = ele.reshape(epochs, int(len(trainloader) / count), -1)
+# freeze Conv2d layer parameters here
+def freeze(model):
+    for index, layer in model.named_children():
+        if type(layer) == nn.Conv2d:
+            layer.weight.requires_grad = False
+            layer.bias.requires_grad = False
 
 
-def checkpoint(param_dict, grad_dict):
-    if args['numeric']:
-        process_dict(param_dict)
-        process_dict(grad_dict)
-        torch.save(param_dict, base_location + 'param.pt')
-        torch.save(grad_dict, base_location + 'grad.pt')
-        print("Numeric processing completed, now beginning inference...")
-
-
-def retrieve_numeric_values(model, mode, numeric_dict):
-    for k,v in model.named_parameters():
-        if mode == "params":
-            x = v.clone().detach()
-            numeric_dict[k].append(x.reshape(-1))
-        elif mode == "gradients":
-            x = v.grad.clone().detach()
-            numeric_dict[k].append(x.reshape(-1))
-        else:
-            raise Exception("Invalid mode specified")
-
-
-def io_summary(model):
-    if args['summary']:
-        with open(base_location + 'summary.txt', 'w') as f:
-            result, _ = summary_string(model, (1, 28, 28), device="cpu")
-            f.write(result)
-        f.close()
-        print("Torchsummary successfully exported")
-
-
-def training(model, criterion, optimizer, param_dict, grad_dict):
+def training(model, criterion, optimizer):
     model.train()
     losses = []
     for e in range(epochs):
         print("-- Beginning Training Epoch " + str(e + 1) + " --")
         epoch_losses = []
         for step, data in tqdm(enumerate(trainloader, 0), total=len(trainloader)):
-            # collect parameter values before optimizer.step()
-            if step % count == 0 and args['numeric']:
-                retrieve_numeric_values(model, "params", param_dict)
-
             # execute mini-batch
             inputs, _labels = data
             optimizer.zero_grad()
@@ -171,15 +104,10 @@ def training(model, criterion, optimizer, param_dict, grad_dict):
             # collect loss of mini-batch
             epoch_losses.append(loss)
 
-            # collect gradient values after computing the loss
-            if step % count == 0 and args['numeric']:
-                retrieve_numeric_values(model, "gradients", grad_dict)
-
         losses.append(torch.stack(epoch_losses))
 
     print("Training completed...")
-    if args['numeric']:
-        np.save(base_location + 'loss.npy', torch.stack(losses).detach().numpy())
+    return torch.stack(losses).detach().numpy()
 
 
 def inference(model):
@@ -203,8 +131,9 @@ def inference(model):
 
 if __name__ == '__main__':
     model, criterion, optimizer = build_model()
-    io_summary(model)
     model.apply(init_params)
+    freeze(model)
 
-    training(model, criterion, optimizer, param_dict, grad_dict)
+    losses = training(model, criterion, optimizer)
+    np.save('losses1.npy', losses) # loss1: 0.2619 (!)
     inference(model)

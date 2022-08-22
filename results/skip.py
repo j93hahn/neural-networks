@@ -3,10 +3,52 @@ Here's a simple exercise: train a standard CNN architecture but freeze the conv
 layers and only train the linear classification layers. How well can the model
 learn?
 """
+def parse_args():
+    import argparse
+    parser = argparse.ArgumentParser(
+        description='Train, evaluate, and store data from convolutional models')
+    parser.add_argument(
+        '-i',
+        required=True,
+        choices=['n', 'u', 'xn', 'xu', 'ku'],
+        help='Initialization technique')
+    parser.add_argument(
+        '-fan',
+        choices=['in', 'out'],
+        help='Fan in or fan out, only for kaiming uniform initialization')
+    parser.add_argument(
+        '-e',
+        required=True,
+        choices=['one', 'ten'],
+        help='Number of epochs to train the model under')
+    parser.add_argument(
+        '-freeze',
+        required=True,
+        choices=['conv', 'linear', 'none'],
+        help='Determine which segments of the CNN to freeze the gradients of')
 
+    args = vars(parser.parse_args())
+
+    epochs = 0
+    save_location = 'epoch_'
+    if args['e'] == 'one':
+        epochs = 1
+        save_location += '1'
+    elif args['e'] == 'ten':
+        epochs = 10
+        save_location += '10'
+
+    if args['i'] == 'ku':
+        save_location += '/' + args['i'] + '-' + args['fan'] + '-' + args['freeze'] + '.npy'
+    else:
+        save_location += '/' + args['i'] + '-' + args['freeze'] + '.npy'
+
+    return args, epochs, save_location
+
+
+args, epochs, save_location = parse_args()
 batch_size = 100
 test_size = 1
-epochs = 1
 
 
 # process training and testing data here
@@ -68,8 +110,18 @@ def build_model():
 
 def init_params(layer):
     if type(layer) == nn.Conv2d or type(layer) == nn.Linear:
-        nn.init.xavier_uniform_(layer.weight)
-        nn.init.zeros_(layer.bias)
+        nn.init.zeros_(layer.bias) # always initialize biases to 0
+        if args['i'] == 'n':
+            nn.init.normal_(layer.weight)
+        elif args['i'] == 'u':
+            nn.init.uniform_(layer.weight, a=-1, b=1)
+        elif args['i'] == 'xn':
+            nn.init.xavier_normal_(layer.weight)
+        elif args['i'] == 'xu':
+            nn.init.xavier_uniform_(layer.weight)
+        elif args['i'] == 'ku':
+            mode = 'fan_in' if args['fan'] == 'in' else 'fan_out'
+            nn.init.kaiming_uniform_(layer.weight, mode=mode, nonlinearity='relu')
 
 
 # freeze Conv2d layer parameters here
@@ -133,14 +185,23 @@ def inference(model):
             _, correct = torch.max(labels.data, 1)
             accuracy += 1 if correct == predicted else 0
     loss = float("{0:.4f}".format(1 - accuracy/total))
+
+    with open('results.txt', 'a') as f:
+        f.write("{}".format(loss))
+        f.write("\n")
+    f.close()
     print(loss)
 
 
 if __name__ == '__main__':
     model, criterion, optimizer = build_model()
     model.apply(init_params)
-    freeze_conv_layers(model)
+
+    if args['freeze'] == 'conv':
+        freeze_conv_layers(model)
+    elif args['freeze'] == 'linear':
+        freeze_linear_layers(model)
 
     losses = training(model, criterion, optimizer)
-    np.save('epoch_1/losses4.npy', losses)
+    np.save(save_location, losses)
     inference(model)

@@ -6,4 +6,4 @@ To activate Jupyter notebooks on remote server -
 
 To transfer files from SSH to local machine, from Desktop/Summer \2022/ run one of these commands -
 1. scp jjahn@archimedes.ttic.edu:/share/data/pals/jjahn/neural-networks/results/experiments/weightinit/lenet-losses.png Project\ 1-CNN/
-2. rsync -chavzP --stats jjahn@archimedes.ttic.edu:/share/data/pals/jjahn/neural-networks/results/experiments/weightinit/lenet-losses.png Project\ 1-CNN/
+2. rsync -chavzP --stats jjahn@archimedes.ttic.edu:/share/data/pals/jjahn/neural-networks/results/experiments/weightinit/lenet-losses.png Project\ 1\ CNN/

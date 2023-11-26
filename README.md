@@ -1,5 +1,5 @@
 # neural-networks
-Source code for my personal project focused on building a vectorized convolutional neural network
+Source code for my personal project focused on building a vectorized neural network library. A presentation can be found here: https://docs.google.com/presentation/d/1fM2uixEnTXKnPIQLfQKK7edWO8Xq4ySZWtMglCW9cMY/edit#slide=id.p
 
 ### modules/
 
